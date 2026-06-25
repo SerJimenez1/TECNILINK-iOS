@@ -1,0 +1,20 @@
+# Xcode
+.xcuserdata/
+DerivedData/
+*.xcworkspace/xcuserdata/
+*.xcuserstate
+build/
+*.pbxuser
+*.mode1v3
+*.mode2v3
+*.perspectivev3
+
+# Firebase — NUNCA subir
+GoogleService-Info.plist
+
+# Swift Package Manager
+.build/
+.swiftpm/
+
+# macOS
+.DS_Store
