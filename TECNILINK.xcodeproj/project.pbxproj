@@ -7,6 +7,10 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		823498BD2FF0C0FA00E5617D /* FirebaseStorage in Frameworks */ = {isa = PBXBuildFile; productRef = 823498BC2FF0C0FA00E5617D /* FirebaseStorage */; };
+		826FB4122FEEE68B00374A70 /* GoogleSignIn in Frameworks */ = {isa = PBXBuildFile; productRef = 826FB4112FEEE68B00374A70 /* GoogleSignIn */; };
+		826FB4142FEEE68B00374A70 /* GoogleSignInSwift in Frameworks */ = {isa = PBXBuildFile; productRef = 826FB4132FEEE68B00374A70 /* GoogleSignInSwift */; };
+		826FB4172FEEEBE100374A70 /* FirebaseFirestore in Frameworks */ = {isa = PBXBuildFile; productRef = 826FB4162FEEEBE100374A70 /* FirebaseFirestore */; };
 		82C2D8DC2FEDE6E100380F39 /* FirebaseAuth in Frameworks */ = {isa = PBXBuildFile; productRef = 82C2D8DB2FEDE6E100380F39 /* FirebaseAuth */; };
 		82C2D8DE2FEDE6E100380F39 /* FirebaseCore in Frameworks */ = {isa = PBXBuildFile; productRef = 82C2D8DD2FEDE6E100380F39 /* FirebaseCore */; };
 /* End PBXBuildFile section */
@@ -15,9 +19,22 @@
 		8275BFBE2FECF53E009FC98D /* TECNILINK.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = TECNILINK.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		826FB40F2FEEE5DD00374A70 /* Exceptions for "TECNILINK" folder in "TECNILINK" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = 8275BFBD2FECF53E009FC98D /* TECNILINK */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		8275BFC02FECF53E009FC98D /* TECNILINK */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				826FB40F2FEEE5DD00374A70 /* Exceptions for "TECNILINK" folder in "TECNILINK" target */,
+			);
 			path = TECNILINK;
 			sourceTree = "<group>";
 		};
@@ -30,16 +47,28 @@
 			files = (
 				82C2D8DE2FEDE6E100380F39 /* FirebaseCore in Frameworks */,
 				82C2D8DC2FEDE6E100380F39 /* FirebaseAuth in Frameworks */,
+				826FB4122FEEE68B00374A70 /* GoogleSignIn in Frameworks */,
+				826FB4172FEEEBE100374A70 /* FirebaseFirestore in Frameworks */,
+				826FB4142FEEE68B00374A70 /* GoogleSignInSwift in Frameworks */,
+				823498BD2FF0C0FA00E5617D /* FirebaseStorage in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		826FB4152FEEEBE100374A70 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
 		8275BFB52FECF53E009FC98D = {
 			isa = PBXGroup;
 			children = (
 				8275BFC02FECF53E009FC98D /* TECNILINK */,
+				826FB4152FEEEBE100374A70 /* Frameworks */,
 				8275BFBF2FECF53E009FC98D /* Products */,
 			);
 			sourceTree = "<group>";
@@ -74,6 +103,10 @@
 			packageProductDependencies = (
 				82C2D8DB2FEDE6E100380F39 /* FirebaseAuth */,
 				82C2D8DD2FEDE6E100380F39 /* FirebaseCore */,
+				826FB4112FEEE68B00374A70 /* GoogleSignIn */,
+				826FB4132FEEE68B00374A70 /* GoogleSignInSwift */,
+				826FB4162FEEEBE100374A70 /* FirebaseFirestore */,
+				823498BC2FF0C0FA00E5617D /* FirebaseStorage */,
 			);
 			productName = TECNILINK;
 			productReference = 8275BFBE2FECF53E009FC98D /* TECNILINK.app */;
@@ -105,6 +138,7 @@
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
 				82C2D8DA2FEDE6E100380F39 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */,
+				826FB4102FEEE68B00374A70 /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 8275BFBF2FECF53E009FC98D /* Products */;
@@ -265,6 +299,7 @@
 				CURRENT_PROJECT_VERSION = 1;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = TECNILINK/Info.plist;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -296,6 +331,7 @@
 				CURRENT_PROJECT_VERSION = 1;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = TECNILINK/Info.plist;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -342,6 +378,14 @@
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
+		826FB4102FEEE68B00374A70 /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/google/GoogleSignIn-iOS";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 9.2.0;
+			};
+		};
 		82C2D8DA2FEDE6E100380F39 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/firebase/firebase-ios-sdk";
@@ -353,6 +397,26 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
+		823498BC2FF0C0FA00E5617D /* FirebaseStorage */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 82C2D8DA2FEDE6E100380F39 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseStorage;
+		};
+		826FB4112FEEE68B00374A70 /* GoogleSignIn */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 826FB4102FEEE68B00374A70 /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */;
+			productName = GoogleSignIn;
+		};
+		826FB4132FEEE68B00374A70 /* GoogleSignInSwift */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 826FB4102FEEE68B00374A70 /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */;
+			productName = GoogleSignInSwift;
+		};
+		826FB4162FEEEBE100374A70 /* FirebaseFirestore */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 82C2D8DA2FEDE6E100380F39 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseFirestore;
+		};
 		82C2D8DB2FEDE6E100380F39 /* FirebaseAuth */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = 82C2D8DA2FEDE6E100380F39 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;

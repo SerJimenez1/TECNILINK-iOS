@@ -1,8 +1,6 @@
-// Antes de compilar, agrega Firebase via Swift Package Manager:
-// File → Add Package Dependencies → https://github.com/firebase/firebase-ios-sdk
-// Selecciona: FirebaseAuth
 import SwiftUI
 import FirebaseCore
+import GoogleSignIn
 
 @main
 struct TECNILINKApp: App {
@@ -17,6 +15,9 @@ struct TECNILINKApp: App {
         WindowGroup {
             ContentView()
                 .environmentObject(authVM)
+                .onOpenURL { url in
+                    GIDSignIn.sharedInstance.handle(url)
+                }
         }
     }
 }

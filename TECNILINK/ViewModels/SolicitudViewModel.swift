@@ -15,11 +15,12 @@ final class SolicitudViewModel: ObservableObject {
     @Published var estimatedPrice: Double = 150
 
     private let coreDataManager: CoreDataManager
-    private let apiService: APIService
+    private let firestoreService: FirestoreService
 
-    init(coreDataManager: CoreDataManager = .shared, apiService: APIService = APIService()) {
+    init(coreDataManager: CoreDataManager = .shared,
+         firestoreService: FirestoreService = .shared) {
         self.coreDataManager = coreDataManager
-        self.apiService = apiService
+        self.firestoreService = firestoreService
     }
 
     // MARK: - Create
@@ -39,15 +40,15 @@ final class SolicitudViewModel: ObservableObject {
             technicianName: technicianName, escrowStatus: .notInitiated
         )
 
-        // Primero guardar localmente siempre — nunca falla
+        // Guardar localmente siempre — nunca falla
         coreDataManager.saveServicio(servicio)
 
-        // Luego intentar sincronizar con la API
+        // Guardar en Firestore (nube)
         do {
-            try await apiService.createServicio(servicio)
+            try await firestoreService.saveServicio(servicio)
             successMessage = "¡Solicitud enviada! El técnico confirmará en breve."
         } catch {
-            // La API falló pero el dato ya está guardado localmente
+            // Quedó guardado localmente, se sincronizará después
             successMessage = "¡Solicitud guardada! Se sincronizará cuando haya conexión."
         }
 
@@ -57,15 +58,65 @@ final class SolicitudViewModel: ObservableObject {
 
     // MARK: - Read history
 
-    func loadHistory(for userId: String) {
-        servicios = coreDataManager.fetchServicios(for: userId)
+    func loadHistory(for userId: String) async {
+        isLoading = true
+
+        // Intentar cargar desde Firestore primero
+        do {
+            let data = try await firestoreService.fetchServicios(for: userId)
+            servicios = data.compactMap { dict -> Servicio? in
+                guard
+                    let id = dict["id"] as? String,
+                    let technicianId = dict["technicianId"] as? String,
+                    let technicianName = dict["technicianName"] as? String,
+                    let specialtyRaw = dict["specialty"] as? String,
+                    let specialty = Specialty(rawValue: specialtyRaw),
+                    let desc = dict["description"] as? String,
+                    let price = dict["estimatedPrice"] as? Double,
+                    let scheduledTimestamp = dict["scheduledDate"] as? Any,
+                    let statusRaw = dict["status"] as? String,
+                    let status = ServiceStatus(rawValue: statusRaw),
+                    let escrowRaw = dict["escrowStatus"] as? String,
+                    let escrow = EscrowStatus(rawValue: escrowRaw)
+                else { return nil }
+
+                let date: Date
+                if let timestamp = scheduledTimestamp as? Date {
+                    date = timestamp
+                } else {
+                    date = Date()
+                }
+
+                return Servicio(
+                    id: id, specialty: specialty,
+                    description: desc, estimatedPrice: price,
+                    scheduledDate: date, status: status,
+                    technicianId: technicianId, userId: userId,
+                    technicianName: technicianName, escrowStatus: escrow
+                )
+            }
+        } catch {
+            // Si Firestore falla, cargar desde Core Data local
+            servicios = coreDataManager.fetchServicios(for: userId)
+        }
+
+        isLoading = false
     }
 
     // MARK: - Delete
 
-    func deleteServicio(id: String, userId: String) {
+    func deleteServicio(id: String, userId: String) async {
+        // Eliminar localmente
         coreDataManager.deleteServicio(id: id)
-        loadHistory(for: userId)
+
+        // Eliminar en Firestore
+        do {
+            try await firestoreService.deleteServicio(id: id)
+        } catch {
+            // Si falla en Firestore, ya se eliminó localmente
+        }
+
+        await loadHistory(for: userId)
     }
 
     // MARK: - Private

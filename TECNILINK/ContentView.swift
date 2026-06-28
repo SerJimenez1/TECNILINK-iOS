@@ -6,7 +6,11 @@ struct ContentView: View {
     var body: some View {
         Group {
             if authVM.isAuthenticated {
-                MainTabView()
+                if authVM.currentUser?.role == "admin" {
+                    AdminDashboardView()
+                } else {
+                    MainTabView()
+                }
             } else {
                 LoginView()
             }

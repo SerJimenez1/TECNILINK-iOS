@@ -20,11 +20,15 @@ struct PerfilView: View {
             .background(Color(.systemGroupedBackground))
             .navigationTitle("Mi Perfil")
             .navigationBarTitleDisplayMode(.large)
-            .onAppear { vm.loadHistory(for: authVM.currentUser?.id ?? "") }
+            .task {
+                await vm.loadHistory(for: authVM.currentUser?.id ?? "")
+            }
             .confirmationDialog("¿Eliminar esta solicitud?", isPresented: $showDeleteConfirm) {
                 Button("Eliminar", role: .destructive) {
                     if let id = selectedServicioId {
-                        vm.deleteServicio(id: id, userId: authVM.currentUser?.id ?? "")
+                        Task {
+                            await vm.deleteServicio(id: id, userId: authVM.currentUser?.id ?? "")
+                        }
                     }
                 }
                 Button("Cancelar", role: .cancel) {}
@@ -75,7 +79,11 @@ struct PerfilView: View {
             Text("Historial de servicios")
                 .font(.headline).padding(.horizontal, 20)
 
-            if vm.servicios.isEmpty {
+            if vm.isLoading {
+                ProgressView("Cargando historial...")
+                    .padding()
+                    .frame(maxWidth: .infinity)
+            } else if vm.servicios.isEmpty {
                 EmptyStateView(icon: "tray",
                                title: "Sin servicios aún",
                                subtitle: "Solicita tu primer técnico desde la pantalla de inicio.")

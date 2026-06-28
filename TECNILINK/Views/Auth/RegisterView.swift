@@ -10,7 +10,7 @@ struct RegisterView: View {
     @State private var confirmPassword = ""
     @State private var showPassword = false
     @State private var showConfirm = false
-
+    
     var body: some View {
         ZStack {
             LinearGradient(colors: [.tecniPrimary, .tecniAccent],
@@ -22,6 +22,8 @@ struct RegisterView: View {
                     headerSection
                     formSection
                     registerButton
+                    orDivider
+                    googleButton
                     backButton
                 }
                 .padding(.horizontal, 28)
@@ -47,7 +49,7 @@ struct RegisterView: View {
             TecniTextField(placeholder: "Nombre completo", text: $name, icon: "person.fill")
             TecniTextField(placeholder: "Correo electrónico", text: $email,
                            icon: "envelope.fill", keyboardType: .emailAddress)
-            TecniSecureField(placeholder: "Contraseña (mín. 6 caracteres)",
+            TecniSecureField(placeholder: "Contraseña (mín. 8 caracteres)",
                              text: $password, showPassword: $showPassword)
             TecniSecureField(placeholder: "Confirmar contraseña",
                              text: $confirmPassword, showPassword: $showConfirm)
@@ -63,9 +65,7 @@ struct RegisterView: View {
 
     private var registerButton: some View {
         Button {
-            guard password == confirmPassword else {
-                return
-            }
+            guard password == confirmPassword else { return }
             Task { await authVM.register(name: name, email: email, password: password) }
         } label: {
             ZStack {
@@ -80,6 +80,34 @@ struct RegisterView: View {
             .cornerRadius(12)
         }
         .disabled(authVM.isLoading || name.isEmpty || email.isEmpty || password.isEmpty || password != confirmPassword)
+    }
+
+    private var orDivider: some View {
+        HStack {
+            Rectangle().frame(height: 1).foregroundColor(.white.opacity(0.3))
+            Text("o").font(.caption).foregroundColor(.white.opacity(0.6))
+            Rectangle().frame(height: 1).foregroundColor(.white.opacity(0.3))
+        }
+    }
+
+    private var googleButton: some View {
+        Button {
+            Task { await authVM.loginWithGoogle() }
+        } label: {
+            HStack(spacing: 12) {
+                Image("google_logo")
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 22, height: 22)
+                Text("Continuar con Google")
+                    .font(.headline)
+                    .foregroundColor(.tecniPrimary)
+            }
+            .frame(maxWidth: .infinity).frame(height: 52)
+            .background(Color.white)
+            .cornerRadius(12)
+        }
+        .disabled(authVM.isLoading)
     }
 
     private var backButton: some View {
