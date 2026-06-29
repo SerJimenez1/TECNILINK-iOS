@@ -79,7 +79,6 @@ final class FirestoreService {
     func fetchTecnicos() async throws -> [[String: Any]] {
         let snapshot = try await db.collection("tecnicos")
             .whereField("verificationStatus", isEqualTo: "verified")
-            .order(by: "rating", descending: true)
             .getDocuments()
         return snapshot.documents.map { $0.data() }
     }
@@ -87,7 +86,6 @@ final class FirestoreService {
     func fetchTecnicosPorEstado(_ status: String) async throws -> [[String: Any]] {
         let snapshot = try await db.collection("tecnicos")
             .whereField("verificationStatus", isEqualTo: status)
-            .order(by: "createdAt", descending: true)
             .getDocuments()
         return snapshot.documents.map { $0.data() }
     }
@@ -122,11 +120,11 @@ final class FirestoreService {
             "userId": userId,
             "name": name,
             "email": email,
-            "specialty": specialty, 
+            "specialty": specialty,
             "phone": phone,
             "location": location,
             "description": description,
-            "verificationStatus": "pending_documents", // ← cambiado de "pending"
+            "verificationStatus": "pending_documents",
             "isVerified": false,
             "rating": 0.0,
             "reviewCount": 0,
@@ -140,7 +138,7 @@ final class FirestoreService {
     func updateTecnicoDocuments(tecnicoId: String, documents: [String: String]) async throws {
         try await db.collection("tecnicos").document(tecnicoId).updateData([
             "documents": documents,
-            "verificationStatus": "pending", // ← cuando sube docs pasa a "pending"
+            "verificationStatus": "pending",
             "updatedAt": Timestamp(date: Date())
         ])
     }

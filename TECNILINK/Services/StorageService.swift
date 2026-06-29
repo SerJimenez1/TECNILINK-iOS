@@ -19,7 +19,7 @@ final class StorageService {
         guard let imageData = image.jpegData(compressionQuality: 0.7) else {
             throw StorageError.invalidImage
         }
-
+            
         let timestamp = String(Int(Date().timeIntervalSince1970))
         let signature = generateSignature(folder: folder, timestamp: timestamp)
         let url = URL(string: "https://api.cloudinary.com/v1_1/\(cloudName)/image/upload")!
