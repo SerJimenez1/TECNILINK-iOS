@@ -9,6 +9,8 @@ final class AuthViewModel: ObservableObject {
     @Published var currentUser: Usuario?
     @Published var isLoading = false
     @Published var errorMessage: String?
+    @Published var navigateToTecnicoRegistro = false
+    @Published var tecnicoStatus: String = ""
 
     private let firebaseService: FirebaseService
     private let firestoreService = FirestoreService.shared
@@ -32,7 +34,7 @@ final class AuthViewModel: ObservableObject {
         isLoading = false
     }
 
-    func register(name: String, email: String, password: String) async {
+    func register(name: String, email: String, password: String, role: String = "user") async {
         guard !name.trimmingCharacters(in: .whitespaces).isEmpty else {
             errorMessage = "El nombre no puede estar vacío."
             return
@@ -41,7 +43,10 @@ final class AuthViewModel: ObservableObject {
         isLoading = true
         errorMessage = nil
         do {
-            try await firebaseService.signUp(name: name, email: email, password: password)
+            try await firebaseService.signUp(name: name, email: email, password: password, role: role)
+            if role == "tecnico" {
+                navigateToTecnicoRegistro = true
+            }
         } catch {
             errorMessage = mapError(error)
         }
@@ -63,6 +68,20 @@ final class AuthViewModel: ObservableObject {
         do { try firebaseService.signOut() } catch { errorMessage = error.localizedDescription }
         currentUser = nil
         isAuthenticated = false
+        navigateToTecnicoRegistro = false
+        tecnicoStatus = ""
+    }
+
+    // MARK: - Tecnico Status
+
+    func loadTecnicoStatus() async {
+        guard let userId = currentUser?.id else { return }
+        do {
+            let data = try await firestoreService.fetchTecnicoByUserId(userId)
+            tecnicoStatus = data?["verificationStatus"] as? String ?? "pending_documents"
+        } catch {
+            tecnicoStatus = "pending_documents"
+        }
     }
 
     // MARK: - Private helpers
@@ -72,12 +91,12 @@ final class AuthViewModel: ObservableObject {
             Task { @MainActor [weak self] in
                 guard let self else { return }
                 if let user = firebaseUser {
-                    // Leer datos completos desde Firestore incluyendo el rol
                     await self.loadUserFromFirestore(firebaseUser: user)
                     self.isAuthenticated = true
                 } else {
                     self.currentUser = nil
                     self.isAuthenticated = false
+                    self.tecnicoStatus = ""
                 }
             }
         }
@@ -87,6 +106,7 @@ final class AuthViewModel: ObservableObject {
         do {
             let data = try await firestoreService.fetchUsuario(id: firebaseUser.uid)
             if let data = data {
+                let role = data["role"] as? String ?? "user"
                 currentUser = Usuario(
                     id: firebaseUser.uid,
                     name: data["name"] as? String ?? firebaseUser.displayName ?? "Usuario",
@@ -95,10 +115,13 @@ final class AuthViewModel: ObservableObject {
                     profilePhotoURL: data["profilePhotoURL"] as? String ?? firebaseUser.photoURL?.absoluteString,
                     serviceHistory: data["serviceHistory"] as? [String] ?? [],
                     registeredAt: (data["registeredAt"] as? Date) ?? Date(),
-                    role: data["role"] as? String ?? "user"
+                    role: role
                 )
+                // Si es técnico cargar su estado de verificación
+                if role == "tecnico" {
+                    await loadTecnicoStatus()
+                }
             } else {
-                // Si no existe en Firestore usa datos de Firebase Auth
                 currentUser = Usuario(
                     id: firebaseUser.uid,
                     name: firebaseUser.displayName ?? "Usuario",
@@ -111,7 +134,6 @@ final class AuthViewModel: ObservableObject {
                 )
             }
         } catch {
-            // Si falla Firestore usa datos básicos de Auth
             currentUser = Usuario(
                 id: firebaseUser.uid,
                 name: firebaseUser.displayName ?? "Usuario",

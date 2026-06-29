@@ -11,17 +11,18 @@ final class FirebaseService {
         try await Auth.auth().signIn(withEmail: email, password: password)
     }
 
-    func signUp(name: String, email: String, password: String) async throws {
+    func signUp(name: String, email: String, password: String, role: String = "user") async throws {
         let result = try await Auth.auth().createUser(withEmail: email, password: password)
         let request = result.user.createProfileChangeRequest()
         request.displayName = name
         try await request.commitChanges()
 
-        // Guardar usuario en Firestore
+        // Guardar usuario en Firestore con el rol correcto
         try await firestoreService.saveUsuario(
             id: result.user.uid,
             name: name,
-            email: email
+            email: email,
+            role: role
         )
     }
 
@@ -51,7 +52,7 @@ final class FirebaseService {
 
         let authResult = try await Auth.auth().signIn(with: credential)
 
-        // Si es la primera vez guarda en Firestore
+        // Si es la primera vez guarda en Firestore como user por defecto
         if authResult.additionalUserInfo?.isNewUser == true {
             let name = result.user.profile?.name ?? "Usuario"
             let email = authResult.user.email ?? ""
@@ -63,7 +64,8 @@ final class FirebaseService {
             try await firestoreService.saveUsuario(
                 id: authResult.user.uid,
                 name: name,
-                email: email
+                email: email,
+                role: "user"
             )
         }
     }

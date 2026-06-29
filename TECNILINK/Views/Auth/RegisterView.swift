@@ -10,7 +10,12 @@ struct RegisterView: View {
     @State private var confirmPassword = ""
     @State private var showPassword = false
     @State private var showConfirm = false
-    
+    @State private var selectedRole: UserRole = .cliente
+
+    enum UserRole {
+        case cliente, tecnico
+    }
+
     var body: some View {
         ZStack {
             LinearGradient(colors: [.tecniPrimary, .tecniAccent],
@@ -20,6 +25,7 @@ struct RegisterView: View {
             ScrollView {
                 VStack(spacing: 28) {
                     headerSection
+                    roleSelectorSection
                     formSection
                     registerButton
                     orDivider
@@ -32,15 +38,59 @@ struct RegisterView: View {
             }
         }
         .navigationBarHidden(true)
+        .navigationDestination(isPresented: Binding(
+            get: { authVM.navigateToTecnicoRegistro },
+            set: { authVM.navigateToTecnicoRegistro = $0 }
+        )) {
+            TecnicoRegistroView()
+                .environmentObject(authVM)
+        }
     }
 
     // MARK: - Subviews
 
     private var headerSection: some View {
         VStack(spacing: 10) {
-            Image(systemName: "person.badge.plus").font(.system(size: 54)).foregroundColor(.white)
-            Text("Crear Cuenta").font(.system(size: 30, weight: .bold, design: .rounded)).foregroundColor(.white)
-            Text("Regístrate para solicitar técnicos").font(.subheadline).foregroundColor(.white.opacity(0.8))
+            Image(systemName: selectedRole == .cliente ? "person.badge.plus" : "wrench.and.screwdriver.fill")
+                .font(.system(size: 54))
+                .foregroundColor(.white)
+                .animation(.easeInOut, value: selectedRole)
+            Text("Crear Cuenta")
+                .font(.system(size: 30, weight: .bold, design: .rounded))
+                .foregroundColor(.white)
+            Text(selectedRole == .cliente ? "Regístrate para solicitar técnicos" : "Regístrate como técnico verificado")
+                .font(.subheadline)
+                .foregroundColor(.white.opacity(0.8))
+                .multilineTextAlignment(.center)
+                .animation(.easeInOut, value: selectedRole)
+        }
+    }
+
+    private var roleSelectorSection: some View {
+        VStack(spacing: 8) {
+            Text("¿Cómo quieres usar TECNILINK?")
+                .font(.caption.bold())
+                .foregroundColor(.white.opacity(0.8))
+
+            HStack(spacing: 0) {
+                RoleButton(
+                    title: "Soy Cliente",
+                    icon: "house.fill",
+                    isSelected: selectedRole == .cliente
+                ) {
+                    withAnimation { selectedRole = .cliente }
+                }
+
+                RoleButton(
+                    title: "Soy Técnico",
+                    icon: "wrench.fill",
+                    isSelected: selectedRole == .tecnico
+                ) {
+                    withAnimation { selectedRole = .tecnico }
+                }
+            }
+            .background(Color.white.opacity(0.15))
+            .cornerRadius(10)
         }
     }
 
@@ -66,13 +116,21 @@ struct RegisterView: View {
     private var registerButton: some View {
         Button {
             guard password == confirmPassword else { return }
-            Task { await authVM.register(name: name, email: email, password: password) }
+            Task {
+                await authVM.register(
+                    name: name,
+                    email: email,
+                    password: password,
+                    role: selectedRole == .tecnico ? "tecnico" : "user"
+                )
+            }
         } label: {
             ZStack {
                 if authVM.isLoading {
                     ProgressView().tint(.tecniPrimary)
                 } else {
-                    Text("Crear Cuenta").font(.headline).foregroundColor(.tecniPrimary)
+                    Text(selectedRole == .cliente ? "Crear Cuenta" : "Continuar como Técnico")
+                        .font(.headline).foregroundColor(.tecniPrimary)
                 }
             }
             .frame(maxWidth: .infinity).frame(height: 52)
@@ -118,6 +176,29 @@ struct RegisterView: View {
             }
             .font(.subheadline)
             .foregroundColor(.white.opacity(0.85))
+        }
+    }
+}
+
+// MARK: - Role Button
+
+private struct RoleButton: View {
+    let title: String
+    let icon: String
+    let isSelected: Bool
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: 6) {
+                Image(systemName: icon).font(.caption)
+                Text(title).font(.caption.bold())
+            }
+            .foregroundColor(isSelected ? .tecniPrimary : .white.opacity(0.7))
+            .frame(maxWidth: .infinity)
+            .frame(height: 40)
+            .background(isSelected ? Color.white : Color.clear)
+            .cornerRadius(8)
         }
     }
 }
