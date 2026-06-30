@@ -22,9 +22,13 @@ final class TecnicoDashboardViewModel: ObservableObject {
     @Published var errorMessage: String?
 
     private let firestoreService = FirestoreService.shared
+    private var currentTecnicoId: String = ""
 
     func loadSolicitudes(tecnicoId: String) async {
+        guard !tecnicoId.isEmpty else { return }
+        currentTecnicoId = tecnicoId
         isLoading = true
+
         do {
             let data = try await firestoreService.fetchSolicitudesPorTecnico(
                 tecnicoId: tecnicoId,
@@ -53,7 +57,7 @@ final class TecnicoDashboardViewModel: ObservableObject {
     func aceptarSolicitud(id: String) async {
         do {
             try await firestoreService.updateServicioStatus(id: id, status: "accepted")
-            await loadSolicitudes(tecnicoId: "")
+            await loadSolicitudes(tecnicoId: currentTecnicoId)
         } catch {
             errorMessage = "Error al aceptar la solicitud."
         }
@@ -62,7 +66,7 @@ final class TecnicoDashboardViewModel: ObservableObject {
     func rechazarSolicitud(id: String) async {
         do {
             try await firestoreService.updateServicioStatus(id: id, status: "rejected")
-            await loadSolicitudes(tecnicoId: "")
+            await loadSolicitudes(tecnicoId: currentTecnicoId)
         } catch {
             errorMessage = "Error al rechazar la solicitud."
         }

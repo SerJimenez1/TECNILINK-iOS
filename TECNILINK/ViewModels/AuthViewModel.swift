@@ -11,6 +11,7 @@ final class AuthViewModel: ObservableObject {
     @Published var errorMessage: String?
     @Published var navigateToTecnicoRegistro = false
     @Published var tecnicoStatus: String = ""
+    @Published var tecnicoDocumentId: String = ""
 
     private let firebaseService: FirebaseService
     private let firestoreService = FirestoreService.shared
@@ -70,6 +71,7 @@ final class AuthViewModel: ObservableObject {
         isAuthenticated = false
         navigateToTecnicoRegistro = false
         tecnicoStatus = ""
+        tecnicoDocumentId = ""
     }
 
     // MARK: - Tecnico Status
@@ -79,8 +81,10 @@ final class AuthViewModel: ObservableObject {
         do {
             let data = try await firestoreService.fetchTecnicoByUserId(userId)
             tecnicoStatus = data?["verificationStatus"] as? String ?? "pending_documents"
+            tecnicoDocumentId = data?["id"] as? String ?? ""
         } catch {
             tecnicoStatus = "pending_documents"
+            tecnicoDocumentId = ""
         }
     }
 
@@ -97,6 +101,7 @@ final class AuthViewModel: ObservableObject {
                     self.currentUser = nil
                     self.isAuthenticated = false
                     self.tecnicoStatus = ""
+                    self.tecnicoDocumentId = ""
                 }
             }
         }
@@ -117,7 +122,6 @@ final class AuthViewModel: ObservableObject {
                     registeredAt: (data["registeredAt"] as? Date) ?? Date(),
                     role: role
                 )
-                // Si es técnico cargar su estado de verificación
                 if role == "tecnico" {
                     await loadTecnicoStatus()
                 }
@@ -147,7 +151,6 @@ final class AuthViewModel: ObservableObject {
         }
     }
 
-    // Validación solo email — para login
     private func validateEmail(_ email: String) -> Bool {
         if email.trimmingCharacters(in: .whitespaces).isEmpty {
             errorMessage = "Ingresa tu correo electrónico."
@@ -161,10 +164,8 @@ final class AuthViewModel: ObservableObject {
         return true
     }
 
-    // Validación completa email + contraseña — para registro
     private func validate(email: String, password: String) -> Bool {
         guard validateEmail(email) else { return false }
-
         if password.count < 8 {
             errorMessage = "La contraseña debe tener al menos 8 caracteres."
             return false

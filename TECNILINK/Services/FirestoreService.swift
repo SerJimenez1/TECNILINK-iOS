@@ -49,7 +49,6 @@ final class FirestoreService {
     func fetchServicios(for userId: String) async throws -> [[String: Any]] {
         let snapshot = try await db.collection("servicios")
             .whereField("userId", isEqualTo: userId)
-            .order(by: "createdAt", descending: true)
             .getDocuments()
         return snapshot.documents.map { $0.data() }
     }
@@ -62,7 +61,6 @@ final class FirestoreService {
         let snapshot = try await db.collection("servicios")
             .whereField("technicianId", isEqualTo: tecnicoId)
             .whereField("status", isEqualTo: status)
-            .order(by: "createdAt", descending: true)
             .getDocuments()
         return snapshot.documents.map { $0.data() }
     }

@@ -20,8 +20,15 @@ struct TecnicoDashboardView: View {
             .background(Color(.systemGroupedBackground))
             .navigationBarHidden(true)
             .task {
-                if let userId = authVM.currentUser?.id {
-                    await vm.loadSolicitudes(tecnicoId: userId)
+                let tecnicoId = authVM.tecnicoDocumentId
+                if !tecnicoId.isEmpty {
+                    await vm.loadSolicitudes(tecnicoId: tecnicoId)
+                } else {
+                    await authVM.loadTecnicoStatus()
+                    let id = authVM.tecnicoDocumentId
+                    if !id.isEmpty {
+                        await vm.loadSolicitudes(tecnicoId: id)
+                    }
                 }
             }
         }
@@ -49,7 +56,6 @@ struct TecnicoDashboardView: View {
                             .foregroundColor(.white)
                     }
                     Spacer()
-                    // Avatar
                     Circle()
                         .fill(Color.white.opacity(0.2))
                         .frame(width: 52, height: 52)
@@ -212,7 +218,6 @@ private struct SolicitudCard: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
 
-            // Top row
             HStack(alignment: .top) {
                 ZStack {
                     RoundedRectangle(cornerRadius: 10)
@@ -243,14 +248,12 @@ private struct SolicitudCard: View {
                 }
             }
 
-            // Descripción
             Text(solicitud.description)
                 .font(.caption)
                 .foregroundColor(.secondary)
                 .lineLimit(2)
                 .padding(.horizontal, 4)
 
-            // Fecha
             HStack(spacing: 6) {
                 Image(systemName: "calendar")
                     .font(.caption)
@@ -260,10 +263,8 @@ private struct SolicitudCard: View {
                     .foregroundColor(.tecniGray)
             }
 
-            // Divider
             Divider()
 
-            // Buttons
             HStack(spacing: 10) {
                 Button(action: onReject) {
                     Text("Rechazar")
