@@ -22,6 +22,13 @@ struct MainTabView: View {
             }
 
             NavigationStack {
+                MisServiciosView()
+            }
+            .tabItem {
+                Label("Mis Servicios", systemImage: "list.bullet.clipboard.fill")
+            }
+
+            NavigationStack {
                 PerfilView()
             }
             .tabItem {

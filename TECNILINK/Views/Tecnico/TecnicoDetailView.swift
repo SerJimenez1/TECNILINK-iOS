@@ -56,35 +56,37 @@ struct TecnicoDetailView: View {
 
     private var headerSection: some View {
         VStack(spacing: 0) {
-            // Fondo degradado
-            LinearGradient(
-                colors: [.tecniPrimary, .tecniAccent],
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-            )
-            .frame(height: 130)
-            .overlay(alignment: .bottom) {
-                // Avatar centrado, mitad dentro del gradiente
+            ZStack {
+                LinearGradient(
+                    colors: [.tecniPrimary, .tecniAccent],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
+                .frame(height: 110)
+
+                // Avatar
                 Circle()
-                    .fill(Color.white.opacity(0.25))
-                    .frame(width: 84, height: 84)
+                    .fill(Color.white)
+                    .frame(width: 96, height: 96)
+                    .overlay(
+                        Circle()
+                            .fill(LinearGradient(colors: [.tecniPrimary, .tecniAccent],
+                                                 startPoint: .topLeading, endPoint: .bottomTrailing))
+                            .frame(width: 88, height: 88)
+                    )
                     .overlay(
                         Text(String(tecnico.name.prefix(1)))
-                            .font(.system(size: 36, weight: .bold))
+                            .font(.system(size: 38, weight: .bold))
                             .foregroundColor(.white)
                     )
-                    .overlay(
-                        Circle().stroke(Color.white, lineWidth: 3)
-                    )
-                    .offset(y: 42)
+                    .offset(y: 55)
             }
+            .frame(height: 110)
 
-            // Contenido debajo del gradiente
+            // Espacio reservado para que el avatar no se encime con el texto
+            Spacer().frame(height: 50)
+
             VStack(spacing: 8) {
-                // Espacio para el avatar que sobresale
-                Spacer().frame(height: 50)
-
-                // Nombre + badge
                 HStack(spacing: 8) {
                     Text(tecnico.name)
                         .font(.title3.bold())
@@ -94,10 +96,8 @@ struct TecnicoDetailView: View {
                     }
                 }
 
-                // Estrellas
                 StarRatingView(rating: tecnico.rating)
 
-                // DNI Validado
                 HStack(spacing: 4) {
                     Image(systemName: "checkmark.seal.fill")
                         .foregroundColor(.tecniMint)
@@ -107,9 +107,8 @@ struct TecnicoDetailView: View {
                         .foregroundColor(.tecniMint)
                 }
             }
-            .padding(.bottom, 16)
-            .background(Color(.systemGroupedBackground))
         }
+        .background(Color(.systemGroupedBackground))
     }
 
     // MARK: - Stats
@@ -180,3 +179,4 @@ struct TecnicoDetailView: View {
         }
     }
 }
+    

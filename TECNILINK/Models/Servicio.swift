@@ -29,6 +29,7 @@ enum ServiceStatus: String, Codable {
     case inProgress = "in_progress"
     case completed  = "completed"
     case cancelled  = "cancelled"
+    case rejected   = "rejected"
 
     var displayName: String {
         switch self {
@@ -37,6 +38,7 @@ enum ServiceStatus: String, Codable {
         case .inProgress: return "En Progreso"
         case .completed:  return "Completado"
         case .cancelled:  return "Cancelado"
+        case .rejected:   return "Rechazado"
         }
     }
 
@@ -47,6 +49,7 @@ enum ServiceStatus: String, Codable {
         case .inProgress: return "02C39A"
         case .completed:  return "1A3C6E"
         case .cancelled:  return "FF4444"
+        case .rejected:   return "FF4444"
         }
     }
 }

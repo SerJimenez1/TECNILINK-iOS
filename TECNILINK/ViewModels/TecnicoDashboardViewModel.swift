@@ -17,7 +17,8 @@ final class TecnicoDashboardViewModel: ObservableObject {
 
     @Published var solicitudesPendientes: [SolicitudIncoming] = []
     @Published var solicitudesAceptadas: [SolicitudIncoming] = []
-    @Published var solicitudesCompletadas: Int = 0
+    @Published var solicitudesRechazadas: [SolicitudIncoming] = []
+    @Published var solicitudesCompletadas: [SolicitudIncoming] = []
     @Published var isLoading = false
     @Published var errorMessage: String?
 
@@ -30,23 +31,25 @@ final class TecnicoDashboardViewModel: ObservableObject {
         isLoading = true
 
         do {
-            let data = try await firestoreService.fetchSolicitudesPorTecnico(
-                tecnicoId: tecnicoId,
-                status: "pending"
+            let pendientes = try await firestoreService.fetchSolicitudesPorTecnico(
+                tecnicoId: tecnicoId, status: "pending"
             )
-            solicitudesPendientes = data.compactMap { parseSolicitud($0) }
+            solicitudesPendientes = pendientes.compactMap { parseSolicitud($0) }
 
             let aceptadas = try await firestoreService.fetchSolicitudesPorTecnico(
-                tecnicoId: tecnicoId,
-                status: "accepted"
+                tecnicoId: tecnicoId, status: "accepted"
             )
             solicitudesAceptadas = aceptadas.compactMap { parseSolicitud($0) }
 
-            let completadas = try await firestoreService.fetchSolicitudesPorTecnico(
-                tecnicoId: tecnicoId,
-                status: "completed"
+            let rechazadas = try await firestoreService.fetchSolicitudesPorTecnico(
+                tecnicoId: tecnicoId, status: "rejected"
             )
-            solicitudesCompletadas = completadas.count
+            solicitudesRechazadas = rechazadas.compactMap { parseSolicitud($0) }
+
+            let completadas = try await firestoreService.fetchSolicitudesPorTecnico(
+                tecnicoId: tecnicoId, status: "completed"
+            )
+            solicitudesCompletadas = completadas.compactMap { parseSolicitud($0) }
 
         } catch {
             errorMessage = "Error al cargar solicitudes."

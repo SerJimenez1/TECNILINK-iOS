@@ -5,8 +5,8 @@ struct SolicitudView: View {
     @EnvironmentObject private var authVM: AuthViewModel
     @StateObject private var vm = SolicitudViewModel()
     @Environment(\.dismiss) private var dismiss
-    @State private var showPago = false
-    @State private var createdServicio: Servicio?
+    @State private var priceText: String = "200"
+    @FocusState private var priceFieldFocused: Bool
 
     var body: some View {
         ScrollView {
@@ -22,28 +22,21 @@ struct SolicitudView: View {
         .background(Color(.systemGroupedBackground))
         .navigationTitle("Solicitar Servicio")
         .navigationBarTitleDisplayMode(.inline)
-        .navigationDestination(isPresented: $showPago) {
-            if let servicio = createdServicio {
-                PagoView(servicio: servicio, tecnico: tecnico)
-            }
-        }
         .alert("Solicitud enviada", isPresented: .constant(vm.successMessage != nil)) {
-            Button("Ver pago") {
-                createdServicio = buildPreviewServicio()
-                showPago = true
-                vm.successMessage = nil
-            }
-            Button("Volver al inicio", role: .cancel) {
+            Button("Entendido") {
                 vm.successMessage = nil
                 dismiss()
             }
         } message: {
-            Text(vm.successMessage ?? "")
+            Text("Tu solicitud fue enviada al técnico. Cuando la acepte, podrás proceder con el pago desde \"Mis Servicios\".")
         }
         .alert("Error", isPresented: .constant(vm.errorMessage != nil)) {
             Button("OK") { vm.errorMessage = nil }
         } message: {
             Text(vm.errorMessage ?? "")
+        }
+        .onAppear {
+            priceText = String(Int(vm.estimatedPrice))
         }
     }
 
@@ -110,18 +103,53 @@ struct SolicitudView: View {
         VStack(alignment: .leading, spacing: 12) {
             Text("Precio estimado").font(.headline)
 
-            VStack(spacing: 8) {
+            VStack(spacing: 12) {
                 HStack {
-                    Text("S/ \(Int(vm.estimatedPrice))").font(.title2.bold()).foregroundColor(.tecniPrimary)
+                    Text("S/")
+                        .font(.title2.bold())
+                        .foregroundColor(.tecniPrimary)
+
+                    TextField("0", text: $priceText)
+                        .font(.title2.bold())
+                        .foregroundColor(.tecniPrimary)
+                        .keyboardType(.numberPad)
+                        .focused($priceFieldFocused)
+                        .onChange(of: priceText) { _, newValue in
+                            let filtered = newValue.filter { $0.isNumber }
+                            if filtered != newValue { priceText = filtered }
+
+                            if let value = Double(filtered) {
+                                let clamped = min(max(value, 0), 3_000)
+                                vm.estimatedPrice = clamped
+                            } else {
+                                vm.estimatedPrice = 0
+                            }
+                        }
+
                     Spacer()
-                    Text("promedio S/ 200").font(.caption).foregroundColor(.tecniGray)
+
+                    Text("promedio S/ 200")
+                        .font(.caption)
+                        .foregroundColor(.tecniGray)
                 }
-                Slider(value: $vm.estimatedPrice, in: 50...1000, step: 10)
-                    .tint(.tecniAccent)
+
+                Slider(
+                    value: Binding(
+                        get: { vm.estimatedPrice },
+                        set: { newValue in
+                            vm.estimatedPrice = newValue
+                            priceText = String(Int(newValue))
+                        }
+                    ),
+                    in: 0...3_000,
+                    step: 10
+                )
+                .tint(.tecniAccent)
+
                 HStack {
-                    Text("S/ 50").font(.caption2).foregroundColor(.tecniGray)
+                    Text("S/ 0").font(.caption2).foregroundColor(.tecniGray)
                     Spacer()
-                    Text("S/ 1,000").font(.caption2).foregroundColor(.tecniGray)
+                    Text("S/ 3,000").font(.caption2).foregroundColor(.tecniGray)
                 }
             }
             .padding()
@@ -130,6 +158,12 @@ struct SolicitudView: View {
             Text("El pago se retiene en Escrow hasta confirmar el trabajo completado.")
                 .font(.caption).foregroundColor(.tecniGray)
                 .padding(.horizontal, 4)
+        }
+        .toolbar {
+            ToolbarItemGroup(placement: .keyboard) {
+                Spacer()
+                Button("Listo") { priceFieldFocused = false }
+            }
         }
     }
 
@@ -154,16 +188,6 @@ struct SolicitudView: View {
             .background(Color.tecniMint)
             .cornerRadius(12)
         }
-        .disabled(vm.isLoading)
-    }
-
-    // MARK: - Helper
-
-    private func buildPreviewServicio() -> Servicio {
-        Servicio(id: UUID().uuidString, specialty: tecnico.specialty,
-                 description: vm.description, estimatedPrice: vm.estimatedPrice,
-                 scheduledDate: vm.selectedDate, status: .pending,
-                 technicianId: tecnico.id, userId: authVM.currentUser?.id ?? "",
-                 technicianName: tecnico.name, escrowStatus: .held)
+        .disabled(vm.isLoading || vm.estimatedPrice <= 0)
     }
 }

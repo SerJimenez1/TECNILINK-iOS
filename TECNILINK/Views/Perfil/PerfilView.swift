@@ -2,17 +2,13 @@ import SwiftUI
 
 struct PerfilView: View {
     @EnvironmentObject private var authVM: AuthViewModel
-    @StateObject private var vm = SolicitudViewModel()
-    @State private var showDeleteConfirm = false
-    @State private var selectedServicioId: String?
 
     var body: some View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 24) {
                     profileHeader
-                    statsCards
-                    historySection
+                    infoSection
                     logoutButton
                 }
                 .padding(.bottom, 32)
@@ -20,19 +16,6 @@ struct PerfilView: View {
             .background(Color(.systemGroupedBackground))
             .navigationTitle("Mi Perfil")
             .navigationBarTitleDisplayMode(.large)
-            .task {
-                await vm.loadHistory(for: authVM.currentUser?.id ?? "")
-            }
-            .confirmationDialog("¿Eliminar esta solicitud?", isPresented: $showDeleteConfirm) {
-                Button("Eliminar", role: .destructive) {
-                    if let id = selectedServicioId {
-                        Task {
-                            await vm.deleteServicio(id: id, userId: authVM.currentUser?.id ?? "")
-                        }
-                    }
-                }
-                Button("Cancelar", role: .cancel) {}
-            }
         }
     }
 
@@ -58,47 +41,15 @@ struct PerfilView: View {
         .padding(.top, 24)
     }
 
-    // MARK: - Stats
+    // MARK: - Info
 
-    private var statsCards: some View {
-        HStack(spacing: 12) {
-            StatCard(value: "\(vm.servicios.count)", label: "Servicios")
-            StatCard(value: "\(vm.servicios.filter { $0.status == .completed }.count)", label: "Completados")
-            StatCard(
-                value: "S/ \(Int(vm.servicios.map(\.estimatedPrice).reduce(0, +)))",
-                label: "Total pagado"
-            )
+    private var infoSection: some View {
+        VStack(spacing: 10) {
+            InfoRow(icon: "envelope.fill", title: "Correo electrónico", value: authVM.currentUser?.email ?? "")
+            InfoRow(icon: "calendar", title: "Miembro desde",
+                    value: (authVM.currentUser?.registeredAt ?? Date()).formatted(date: .abbreviated, time: .omitted))
         }
         .padding(.horizontal, 20)
-    }
-
-    // MARK: - History
-
-    private var historySection: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            Text("Historial de servicios")
-                .font(.headline).padding(.horizontal, 20)
-
-            if vm.isLoading {
-                ProgressView("Cargando historial...")
-                    .padding()
-                    .frame(maxWidth: .infinity)
-            } else if vm.servicios.isEmpty {
-                EmptyStateView(icon: "tray",
-                               title: "Sin servicios aún",
-                               subtitle: "Solicita tu primer técnico desde la pantalla de inicio.")
-            } else {
-                LazyVStack(spacing: 10) {
-                    ForEach(vm.servicios) { servicio in
-                        ServicioHistoryRow(servicio: servicio) {
-                            selectedServicioId = servicio.id
-                            showDeleteConfirm = true
-                        }
-                        .padding(.horizontal, 20)
-                    }
-                }
-            }
-        }
     }
 
     // MARK: - Logout
@@ -116,48 +67,23 @@ struct PerfilView: View {
     }
 }
 
-// MARK: - Sub-views
+// MARK: - Info Row
 
-private struct StatCard: View {
-    let value: String; let label: String
-    var body: some View {
-        VStack(spacing: 6) {
-            Text(value).font(.headline.bold()).foregroundColor(.tecniPrimary)
-            Text(label).font(.caption).foregroundColor(.tecniGray)
-        }
-        .frame(maxWidth: .infinity).padding(.vertical, 16)
-        .tecniCard()
-    }
-}
-
-private struct ServicioHistoryRow: View {
-    let servicio: Servicio
-    let onDelete: () -> Void
+private struct InfoRow: View {
+    let icon: String
+    let title: String
+    let value: String
 
     var body: some View {
-        HStack(spacing: 12) {
-            Image(systemName: servicio.specialty.icon)
-                .font(.title3).foregroundColor(.tecniAccent)
-                .frame(width: 44, height: 44)
-                .background(Color.tecniAccent.opacity(0.1))
-                .cornerRadius(10)
-
-            VStack(alignment: .leading, spacing: 4) {
-                Text(servicio.specialty.rawValue).font(.subheadline.bold())
-                Text(servicio.scheduledDate.formatted(date: .abbreviated, time: .shortened))
-                    .font(.caption).foregroundColor(.tecniGray)
-                Text("S/ \(String(format: "%.0f", servicio.estimatedPrice))")
-                    .font(.caption).foregroundColor(.tecniPrimary)
+        HStack(spacing: 14) {
+            Image(systemName: icon)
+                .foregroundColor(.tecniAccent)
+                .frame(width: 28)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title).font(.caption).foregroundColor(.tecniGray)
+                Text(value).font(.subheadline.bold())
             }
-
             Spacer()
-
-            VStack(alignment: .trailing, spacing: 8) {
-                StatusBadge(status: servicio.status)
-                Button { onDelete() } label: {
-                    Image(systemName: "trash").font(.caption).foregroundColor(.red.opacity(0.7))
-                }
-            }
         }
         .padding()
         .tecniCard()

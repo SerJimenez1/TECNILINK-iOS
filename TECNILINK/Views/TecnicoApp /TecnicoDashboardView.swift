@@ -1,21 +1,78 @@
 import SwiftUI
 
+enum FiltroSolicitud: String, CaseIterable {
+    case pendientes = "Nuevas"
+    case aceptadas = "En curso"
+    case rechazadas = "Rechazadas"
+    case completadas = "Completadas"
+
+    var icono: String {
+        switch self {
+        case .pendientes:  return "bell.fill"
+        case .aceptadas:   return "wrench.fill"
+        case .rechazadas:  return "xmark.circle.fill"
+        case .completadas: return "checkmark.seal.fill"
+        }
+    }
+
+    var color: Color {
+        switch self {
+        case .pendientes:  return .orange
+        case .aceptadas:   return .tecniAccent
+        case .rechazadas:  return .red
+        case .completadas: return .tecniPrimary
+        }
+    }
+}
+
 struct TecnicoDashboardView: View {
     @EnvironmentObject private var authVM: AuthViewModel
     @StateObject private var vm = TecnicoDashboardViewModel()
+    @State private var filtroActivo: FiltroSolicitud = .pendientes
+
+    var solicitudesFiltradas: [SolicitudIncoming] {
+        switch filtroActivo {
+        case .pendientes:  return vm.solicitudesPendientes
+        case .aceptadas:   return vm.solicitudesAceptadas
+        case .rechazadas:  return vm.solicitudesRechazadas
+        case .completadas: return vm.solicitudesCompletadas
+        }
+    }
 
     var body: some View {
         NavigationStack {
-            ScrollView {
-                VStack(spacing: 0) {
-                    headerBanner
-                    statsRow
-                        .padding(.horizontal, 20)
-                        .padding(.top, 20)
-                    solicitudesSection
-                        .padding(.top, 24)
+            VStack(spacing: 0) {
+                headerBanner
+                filtrosBar
+                    .padding(.vertical, 12)
+                    .background(Color(.systemGroupedBackground))
+
+                if vm.isLoading {
+                    Spacer()
+                    ProgressView("Cargando...")
+                    Spacer()
+                } else if solicitudesFiltradas.isEmpty {
+                    emptyState
+                } else {
+                    ScrollView {
+                        LazyVStack(spacing: 12) {
+                            ForEach(solicitudesFiltradas) { solicitud in
+                                NavigationLink(destination: SolicitudDetalleView(
+                                    solicitud: solicitud,
+                                    onAccept: { Task { await vm.aceptarSolicitud(id: solicitud.id) } },
+                                    onReject: { Task { await vm.rechazarSolicitud(id: solicitud.id) } }
+                                )) {
+                                    SolicitudCard(solicitud: solicitud, color: filtroActivo.color)
+                                        .padding(.horizontal, 20)
+                                }
+                                .buttonStyle(.plain)
+                            }
+                        }
+                        .padding(.vertical, 16)
+                        .padding(.bottom, 32)
+                    }
+                    .background(Color(.systemGroupedBackground))
                 }
-                .padding(.bottom, 32)
             }
             .background(Color(.systemGroupedBackground))
             .navigationBarHidden(true)
@@ -43,7 +100,7 @@ struct TecnicoDashboardView: View {
                 startPoint: .topLeading,
                 endPoint: .bottomTrailing
             )
-            .frame(height: 200)
+            .frame(height: 160)
 
             VStack(spacing: 0) {
                 HStack {
@@ -82,129 +139,92 @@ struct TecnicoDashboardView: View {
                     } label: {
                         HStack(spacing: 4) {
                             Image(systemName: "rectangle.portrait.and.arrow.right")
-                            Text("Salir")
-                                .font(.caption)
+                            Text("Salir").font(.caption)
                         }
                         .foregroundColor(.white.opacity(0.7))
                     }
                 }
                 .padding(.horizontal, 20)
                 .padding(.top, 8)
-                .padding(.bottom, 20)
+                .padding(.bottom, 16)
             }
         }
     }
 
-    // MARK: - Stats
+    // MARK: - Filtros Bar
 
-    private var statsRow: some View {
-        HStack(spacing: 12) {
-            StatPill(
-                value: "\(vm.solicitudesPendientes.count)",
-                label: "Nuevas",
-                icon: "bell.fill",
-                color: .orange
-            )
-            StatPill(
-                value: "\(vm.solicitudesAceptadas.count)",
-                label: "En curso",
-                icon: "wrench.fill",
-                color: .tecniAccent
-            )
-            StatPill(
-                value: "\(vm.solicitudesCompletadas)",
-                label: "Hechos",
-                icon: "checkmark.circle.fill",
-                color: .tecniMint
-            )
-        }
-    }
-
-    // MARK: - Solicitudes
-
-    private var solicitudesSection: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            HStack {
-                Text("Solicitudes nuevas")
-                    .font(.headline)
-                Spacer()
-                if vm.solicitudesPendientes.count > 0 {
-                    Text("\(vm.solicitudesPendientes.count) pendiente\(vm.solicitudesPendientes.count > 1 ? "s" : "")")
-                        .font(.caption.bold())
-                        .foregroundColor(.orange)
-                        .padding(.horizontal, 10)
-                        .padding(.vertical, 4)
-                        .background(Color.orange.opacity(0.12))
-                        .cornerRadius(20)
-                }
-            }
-            .padding(.horizontal, 20)
-
-            if vm.isLoading {
-                ProgressView("Cargando...")
-                    .frame(maxWidth: .infinity)
-                    .padding(40)
-            } else if vm.solicitudesPendientes.isEmpty {
-                VStack(spacing: 12) {
-                    Image(systemName: "moon.zzz.fill")
-                        .font(.system(size: 44))
-                        .foregroundColor(.tecniGray.opacity(0.4))
-                    Text("Sin solicitudes por ahora")
-                        .font(.subheadline.bold())
-                        .foregroundColor(.tecniGray)
-                    Text("Cuando un cliente te solicite aparecerá aquí")
-                        .font(.caption)
-                        .foregroundColor(.tecniGray.opacity(0.7))
-                        .multilineTextAlignment(.center)
-                }
-                .frame(maxWidth: .infinity)
-                .padding(40)
-            } else {
-                LazyVStack(spacing: 12) {
-                    ForEach(vm.solicitudesPendientes) { solicitud in
-                        SolicitudCard(solicitud: solicitud) {
-                            Task { await vm.aceptarSolicitud(id: solicitud.id) }
-                        } onReject: {
-                            Task { await vm.rechazarSolicitud(id: solicitud.id) }
+    private var filtrosBar: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 10) {
+                ForEach(FiltroSolicitud.allCases, id: \.self) { filtro in
+                    let count = conteo(filtro)
+                    Button {
+                        withAnimation(.easeInOut(duration: 0.2)) {
+                            filtroActivo = filtro
                         }
-                        .padding(.horizontal, 20)
+                    } label: {
+                        HStack(spacing: 6) {
+                            Image(systemName: filtro.icono)
+                                .font(.caption)
+                            Text(filtro.rawValue)
+                                .font(.subheadline.bold())
+                            if count > 0 {
+                                Text("\(count)")
+                                    .font(.caption2.bold())
+                                    .foregroundColor(filtroActivo == filtro ? filtro.color : .white)
+                                    .padding(.horizontal, 6)
+                                    .padding(.vertical, 2)
+                                    .background(filtroActivo == filtro ? filtro.color.opacity(0.2) : Color.white.opacity(0.3))
+                                    .cornerRadius(8)
+                            }
+                        }
+                        .foregroundColor(filtroActivo == filtro ? filtro.color : .tecniGray)
+                        .padding(.horizontal, 14)
+                        .padding(.vertical, 9)
+                        .background(filtroActivo == filtro ? filtro.color.opacity(0.1) : Color(.systemBackground))
+                        .cornerRadius(20)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 20)
+                                .stroke(filtroActivo == filtro ? filtro.color : Color.clear, lineWidth: 1.5)
+                        )
+                        .shadow(color: .black.opacity(0.05), radius: 4, x: 0, y: 2)
                     }
                 }
             }
+            .padding(.horizontal, 20)
         }
     }
-}
 
-// MARK: - Stat Pill
+    // MARK: - Empty State
 
-private struct StatPill: View {
-    let value: String
-    let label: String
-    let icon: String
-    let color: Color
-
-    var body: some View {
-        VStack(spacing: 6) {
-            ZStack {
-                Circle()
-                    .fill(color.opacity(0.12))
-                    .frame(width: 44, height: 44)
-                Image(systemName: icon)
-                    .font(.system(size: 18))
-                    .foregroundColor(color)
-            }
-            Text(value)
-                .font(.title3.bold())
-                .foregroundColor(.primary)
-            Text(label)
-                .font(.caption2)
+    private var emptyState: some View {
+        VStack(spacing: 12) {
+            Spacer()
+            Image(systemName: filtroActivo == .pendientes ? "moon.zzz.fill" : "tray.fill")
+                .font(.system(size: 44))
+                .foregroundColor(.tecniGray.opacity(0.4))
+            Text(filtroActivo == .pendientes ? "Sin solicitudes nuevas" : "Sin solicitudes \(filtroActivo.rawValue.lowercased())")
+                .font(.subheadline.bold())
                 .foregroundColor(.tecniGray)
+            Text(filtroActivo == .pendientes ? "Cuando un cliente te solicite aparecerá aquí" : "")
+                .font(.caption)
+                .foregroundColor(.tecniGray.opacity(0.7))
+                .multilineTextAlignment(.center)
+            Spacer()
         }
         .frame(maxWidth: .infinity)
-        .padding(.vertical, 16)
-        .background(Color(.systemBackground))
-        .cornerRadius(14)
-        .shadow(color: .black.opacity(0.05), radius: 6, x: 0, y: 2)
+        .padding(40)
+    }
+
+    // MARK: - Conteo helper
+
+    private func conteo(_ filtro: FiltroSolicitud) -> Int {
+        switch filtro {
+        case .pendientes:  return vm.solicitudesPendientes.count
+        case .aceptadas:   return vm.solicitudesAceptadas.count
+        case .rechazadas:  return vm.solicitudesRechazadas.count
+        case .completadas: return vm.solicitudesCompletadas.count
+        }
     }
 }
 
@@ -212,83 +232,35 @@ private struct StatPill: View {
 
 private struct SolicitudCard: View {
     let solicitud: SolicitudIncoming
-    let onAccept: () -> Void
-    let onReject: () -> Void
+    let color: Color
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 14) {
-
-            HStack(alignment: .top) {
-                ZStack {
-                    RoundedRectangle(cornerRadius: 10)
-                        .fill(Color.tecniAccent.opacity(0.12))
-                        .frame(width: 46, height: 46)
-                    Image(systemName: "wrench.and.screwdriver.fill")
-                        .foregroundColor(.tecniAccent)
-                        .font(.system(size: 18))
-                }
-
-                VStack(alignment: .leading, spacing: 3) {
-                    Text(solicitud.specialty)
-                        .font(.subheadline.bold())
-                    Text(solicitud.userName)
-                        .font(.caption)
-                        .foregroundColor(.tecniGray)
-                }
-
-                Spacer()
-
-                VStack(alignment: .trailing, spacing: 3) {
-                    Text("S/ \(Int(solicitud.estimatedPrice))")
-                        .font(.headline.bold())
-                        .foregroundColor(.tecniPrimary)
-                    Text("estimado")
-                        .font(.caption2)
-                        .foregroundColor(.tecniGray)
-                }
+        HStack(spacing: 12) {
+            ZStack {
+                RoundedRectangle(cornerRadius: 10)
+                    .fill(color.opacity(0.12))
+                    .frame(width: 46, height: 46)
+                Image(systemName: "wrench.and.screwdriver.fill")
+                    .foregroundColor(color)
+                    .font(.system(size: 18))
             }
 
-            Text(solicitud.description)
-                .font(.caption)
-                .foregroundColor(.secondary)
-                .lineLimit(2)
-                .padding(.horizontal, 4)
-
-            HStack(spacing: 6) {
-                Image(systemName: "calendar")
-                    .font(.caption)
-                    .foregroundColor(.tecniGray)
+            VStack(alignment: .leading, spacing: 3) {
+                Text(solicitud.specialty).font(.subheadline.bold())
+                Text(solicitud.userName).font(.caption).foregroundColor(.tecniGray)
                 Text(solicitud.scheduledDate.formatted(date: .abbreviated, time: .shortened))
-                    .font(.caption)
-                    .foregroundColor(.tecniGray)
+                    .font(.caption).foregroundColor(.tecniGray)
             }
 
-            Divider()
+            Spacer()
 
-            HStack(spacing: 10) {
-                Button(action: onReject) {
-                    Text("Rechazar")
-                        .font(.subheadline.bold())
-                        .foregroundColor(.red)
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 44)
-                        .background(Color.red.opacity(0.08))
-                        .cornerRadius(10)
-                }
-
-                Button(action: onAccept) {
-                    HStack(spacing: 6) {
-                        Image(systemName: "checkmark")
-                            .font(.subheadline.bold())
-                        Text("Aceptar")
-                            .font(.subheadline.bold())
-                    }
-                    .foregroundColor(.white)
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 44)
-                    .background(Color.tecniMint)
-                    .cornerRadius(10)
-                }
+            VStack(alignment: .trailing, spacing: 4) {
+                Text("S/ \(Int(solicitud.estimatedPrice))")
+                    .font(.subheadline.bold())
+                    .foregroundColor(color)
+                Image(systemName: "chevron.right")
+                    .font(.caption)
+                    .foregroundColor(.tecniGray)
             }
         }
         .padding(16)
