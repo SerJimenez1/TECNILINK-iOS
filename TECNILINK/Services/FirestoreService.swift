@@ -153,4 +153,36 @@ final class FirestoreService {
             .getDocuments()
         return snapshot.documents.first?.data()
     }
+
+    // MARK: - Reseñas
+
+    func saveCalificacion(tecnicoId: String, userId: String, servicioId: String, rating: Int, comment: String) async throws {
+        let reviewId = UUID().uuidString
+        let reviewData: [String: Any] = [
+            "id": reviewId,
+            "tecnicoId": tecnicoId, 
+            "userId": userId,
+            "servicioId": servicioId,
+            "rating": rating,
+            "comment": comment,
+            "createdAt": Timestamp(date: Date())
+        ]
+
+        // Guardar reseña en colección /resenas
+        try await db.collection("resenas").document(reviewId).setData(reviewData)
+
+        // Actualizar rating promedio del técnico
+        let snapshot = try await db.collection("resenas")
+            .whereField("tecnicoId", isEqualTo: tecnicoId)
+            .getDocuments()
+
+        let ratings = snapshot.documents.compactMap { $0.data()["rating"] as? Int }
+        let avgRating = ratings.isEmpty ? Double(rating) : Double(ratings.reduce(0, +)) / Double(ratings.count)
+
+        try await db.collection("tecnicos").document(tecnicoId).updateData([
+            "rating": avgRating,
+            "reviewCount": ratings.count,
+            "completedJobs": FieldValue.increment(Int64(1))
+        ])
+    }
 }

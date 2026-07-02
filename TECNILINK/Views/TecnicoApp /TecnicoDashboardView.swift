@@ -51,25 +51,33 @@ struct TecnicoDashboardView: View {
                     Spacer()
                     ProgressView("Cargando...")
                     Spacer()
-                } else if solicitudesFiltradas.isEmpty {
-                    emptyState
                 } else {
                     ScrollView {
                         LazyVStack(spacing: 12) {
-                            ForEach(solicitudesFiltradas) { solicitud in
-                                NavigationLink(destination: SolicitudDetalleView(
-                                    solicitud: solicitud,
-                                    onAccept: { Task { await vm.aceptarSolicitud(id: solicitud.id) } },
-                                    onReject: { Task { await vm.rechazarSolicitud(id: solicitud.id) } }
-                                )) {
-                                    SolicitudCard(solicitud: solicitud, color: filtroActivo.color)
-                                        .padding(.horizontal, 20)
+                            if solicitudesFiltradas.isEmpty {
+                                emptyStateContent
+                            } else {
+                                ForEach(solicitudesFiltradas) { solicitud in
+                                    NavigationLink(destination: SolicitudDetalleView(
+                                        solicitud: solicitud,
+                                        onAccept: { Task { await vm.aceptarSolicitud(id: solicitud.id) } },
+                                        onReject: { Task { await vm.rechazarSolicitud(id: solicitud.id) } }
+                                    )) {
+                                        SolicitudCard(solicitud: solicitud, color: filtroActivo.color)
+                                            .padding(.horizontal, 20)
+                                    }
+                                    .buttonStyle(.plain)
                                 }
-                                .buttonStyle(.plain)
                             }
                         }
                         .padding(.vertical, 16)
                         .padding(.bottom, 32)
+                    }
+                    .refreshable {
+                        let tecnicoId = authVM.tecnicoDocumentId
+                        if !tecnicoId.isEmpty {
+                            await vm.loadSolicitudes(tecnicoId: tecnicoId)
+                        }
                     }
                     .background(Color(.systemGroupedBackground))
                 }
@@ -195,11 +203,10 @@ struct TecnicoDashboardView: View {
         }
     }
 
-    // MARK: - Empty State
+    // MARK: - Empty State Content
 
-    private var emptyState: some View {
+    private var emptyStateContent: some View {
         VStack(spacing: 12) {
-            Spacer()
             Image(systemName: filtroActivo == .pendientes ? "moon.zzz.fill" : "tray.fill")
                 .font(.system(size: 44))
                 .foregroundColor(.tecniGray.opacity(0.4))
@@ -210,7 +217,6 @@ struct TecnicoDashboardView: View {
                 .font(.caption)
                 .foregroundColor(.tecniGray.opacity(0.7))
                 .multilineTextAlignment(.center)
-            Spacer()
         }
         .frame(maxWidth: .infinity)
         .padding(40)
