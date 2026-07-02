@@ -1,327 +1,281 @@
-# TECNILINK — App iOS Nativa
+# TECNILINK 🔧
 
-Plataforma digital que conecta usuarios con técnicos verificados en servicios del hogar en el distrito de **José Luis Bustamante y Rivero, Arequipa, Perú**.
+> Plataforma digital que conecta usuarios con técnicos verificados en servicios del hogar en Arequipa, Perú.
 
----
-
-## Modelo de negocio
-
-| Concepto | Detalle |
-|---|---|
-| Comisión | 15% por servicio completado |
-| Ticket promedio | S/ 200 |
-| Pago | Sistema Escrow (retenido hasta confirmar trabajo) |
-| Área de cobertura | J.L.B. y Rivero, Arequipa |
+![Swift](https://img.shields.io/badge/Swift-5.9-orange?logo=swift)
+![iOS](https://img.shields.io/badge/iOS-17%2B-blue?logo=apple)
+![Firebase](https://img.shields.io/badge/Firebase-Firestore-yellow?logo=firebase)
+![Cloudinary](https://img.shields.io/badge/Storage-Cloudinary-purple)
+![RENIEC](https://img.shields.io/badge/Verificación-RENIEC-green)
 
 ---
 
-## Stack tecnológico
+## 📱 Descripción
+
+TECNILINK es una app iOS nativa que resuelve el problema de encontrar técnicos confiables para servicios del hogar. El diferencial principal es el **sistema de verificación de identidad en tiempo real con RENIEC**, que garantiza que cada técnico es quien dice ser antes de aparecer en la plataforma.
+
+**Especialidades disponibles:**
+- ⚡ Electricidad
+- 💧 Gasfitería
+- 🪚 Carpintería
+- 🔐 Cerrajería
+- 🧺 Electrodomésticos
+- 🖌️ Pintura / Albañilería
+
+**Zona de cobertura:** Distrito José Luis Bustamante y Rivero, Arequipa, Perú
+
+---
+
+## 🏗️ Stack Tecnológico
 
 | Capa | Tecnología |
-|---|---|
+|------|-----------|
 | UI | SwiftUI |
 | Arquitectura | MVVM (ObservableObject / StateObject) |
-| Autenticación | Firebase Auth (email/password) |
+| Autenticación | Firebase Auth (Email + Google Sign-In) |
+| Base de datos | Firebase Firestore |
+| Almacenamiento | Cloudinary |
+| Verificación DNI | API Factiliza (RENIEC) |
 | Persistencia local | Core Data |
-| Red | URLSession con async/await |
-| Serialización | Codable (JSON) |
-| Reactividad | Combine |
+| Networking | URLSession + async/await |
 
 ---
 
-## Estructura de archivos
+## 👥 Roles de usuario
+
+### 👤 Cliente
+- Registro con email/contraseña o Google Sign-In
+- Búsqueda y filtrado de técnicos verificados
+- Solicitud de servicio con precio estimado
+- Historial de servicios con estados
+- Confirmación de trabajo completado
+- Calificación del técnico (1-5 estrellas)
+
+### 🔧 Técnico
+- Registro con verificación de DNI en tiempo real (RENIEC)
+- Subida de documentos (DNI, certificado, selfie, fotos de trabajo)
+- Dashboard con filtros: Nuevas / En curso / Rechazadas / Completadas
+- Vista detallada de cada solicitud antes de aceptar o rechazar
+- Marcar trabajo como completado
+
+### 🛡️ Administrador
+- Panel de verificación de técnicos pendientes
+- Visualización de documentos subidos
+- Verificación del DNI consultado en RENIEC
+- Aprobación o rechazo con motivo
+
+---
+
+## 🔄 Flujos principales
+
+### Flujo del Cliente
+```
+Registro → Buscar técnico → Solicitar servicio →
+Esperar respuesta del técnico → Ver aceptación →
+Confirmar trabajo completado → Calificar técnico
+```
+
+### Flujo del Técnico
+```
+Registro → Verificación DNI (RENIEC) → Llenar perfil →
+Subir documentos → Esperar aprobación del admin →
+Dashboard → Ver solicitud en detalle →
+Aceptar/Rechazar → Marcar como completado
+```
+
+### Flujo del Administrador
+```
+Login → Panel de verificación →
+Ver técnicos pendientes → Revisar documentos y DNI →
+Aprobar o rechazar con motivo
+```
+
+---
+
+## ✅ Sistema de Verificación
+
+El diferencial de TECNILINK es su proceso de verificación en 3 capas:
+
+1. **Verificación DNI con RENIEC** — Al registrarse, el técnico ingresa su DNI que se valida en tiempo real contra la base de datos de RENIEC vía API Factiliza. El nombre devuelto se guarda y es visible para el administrador.
+
+2. **Documentos físicos** — El técnico sube fotos de:
+   - DNI frontal y posterior
+   - Certificado técnico o constancia de estudios
+   - Selfie sosteniendo el DNI
+   - Mínimo 3 fotos de trabajos anteriores
+
+3. **Revisión manual del admin** — El administrador revisa los documentos y el resultado de RENIEC antes de aprobar al técnico. Solo técnicos aprobados aparecen en la app.
+
+---
+
+## 🗄️ Estructura de Firestore
+
+```
+/usuarios/{userId}
+  - id, name, email, role, registeredAt
+
+/tecnicos/{tecnicoId}
+  - id, userId, name, email, specialty
+  - phone, location, description
+  - dni, dniNombreRENIEC, dniVerificado
+  - verificationStatus: "pending_documents" | "pending" | "verified" | "rejected"
+  - isVerified, rating, reviewCount, completedJobs
+  - documents: { dniFrontURL, dniBackURL, certificateURL, selfieURL, workPhotos }
+  - createdAt, updatedAt, verifiedAt?
+
+/servicios/{servicioId}
+  - id, userId, technicianId, technicianName
+  - specialty, description, estimatedPrice
+  - scheduledDate, status, escrowStatus, createdAt
+
+/resenas/{resenaId}
+  - id, tecnicoId, userId, servicioId
+  - rating, comment, createdAt
+```
+
+---
+
+## 📁 Estructura del proyecto
 
 ```
 TECNILINK/
-├── .gitignore
-└── TECNILINK/
-    ├── TECNILINKApp.swift
-    ├── ContentView.swift
-    │
-    ├── Extensions/
-    │   └── Color+Hex.swift
-    │
-    ├── Models/
-    │   ├── Tecnico.swift
-    │   ├── Servicio.swift
-    │   └── Usuario.swift
-    │
-    ├── ViewModels/
-    │   ├── AuthViewModel.swift
-    │   ├── TecnicoViewModel.swift
-    │   └── SolicitudViewModel.swift
-    │
-    ├── Services/
-    │   ├── FirebaseService.swift
-    │   └── APIService.swift
-    │
-    ├── Persistence/
-    │   └── CoreDataManager.swift
-    │
-    ├── Resources/
-    │   └── TECNILINK.xcdatamodeld/   ← modelo Core Data
-    │
-    └── Views/
-        ├── MainTabView.swift
-        ├── Auth/
-        │   ├── LoginView.swift
-        │   └── RegisterView.swift
-        ├── Home/
-        │   └── HomeView.swift
-        ├── Tecnico/
-        │   ├── TecnicoListView.swift
-        │   └── TecnicoDetailView.swift
-        ├── Solicitud/
-        │   └── SolicitudView.swift
-        ├── Pago/
-        │   └── PagoView.swift
-        ├── Perfil/
-        │   └── PerfilView.swift
-        └── Components/
-            └── TecniComponents.swift
+├── App/
+│   ├── TECNILINKApp.swift
+│   └── ContentView.swift
+├── Extensions/
+│   └── Color+Hex.swift
+├── Models/
+│   ├── Tecnico.swift
+│   ├── Servicio.swift
+│   └── Usuario.swift
+├── Persistence/
+│   └── CoreDataManager.swift
+├── Services/
+│   ├── FirebaseService.swift
+│   ├── FirestoreService.swift
+│   ├── StorageService.swift
+│   ├── FactilizaService.swift
+│   ├── CloudinaryConfig.swift     ← en .gitignore
+│   └── FactilizaConfig.swift      ← en .gitignore
+├── ViewModels/
+│   ├── AuthViewModel.swift
+│   ├── TecnicoViewModel.swift
+│   ├── SolicitudViewModel.swift
+│   ├── AdminViewModel.swift
+│   └── TecnicoDashboardViewModel.swift
+└── Views/
+    ├── Admin/
+    │   ├── AdminDashboardView.swift
+    │   └── AdminTecnicoDetailView.swift
+    ├── Auth/
+    │   ├── LoginView.swift
+    │   └── RegisterView.swift
+    ├── Components/
+    ├── Home/
+    │   └── HomeView.swift
+    ├── MisServicios/
+    │   ├── MisServiciosView.swift
+    │   └── CalificacionView.swift
+    ├── Pago/
+    │   └── PagoView.swift
+    ├── Perfil/
+    │   └── PerfilView.swift
+    ├── Solicitud/
+    │   └── SolicitudView.swift
+    ├── Tecnico/
+    │   ├── TecnicoListView.swift
+    │   └── TecnicoDetailView.swift
+    └── TecnicoApp/
+        ├── TecnicoTabView.swift
+        ├── TecnicoRegistroView.swift
+        ├── TecnicoDocumentosView.swift
+        ├── TecnicoEsperaView.swift
+        ├── TecnicoDashboardView.swift
+        ├── TecnicoPerfilView.swift
+        ├── TecnicoRechazadoView.swift
+        └── SolicitudDetalleView.swift
 ```
 
 ---
 
-## Pantallas
+## 🚀 Instalación
 
-### LoginView / RegisterView
-- Autenticación con Firebase Auth (email + contraseña)
-- Validaciones locales antes de llamar a Firebase
-- Mensajes de error mapeados al español
-- Fondo degradado con la paleta de marca
+### Requisitos
+- Xcode 15+
+- iOS 17+
+- Cuenta Firebase
+- Cuenta Cloudinary
+- Token API Factiliza
 
-### HomeView
-- Banner de bienvenida con nombre del usuario
-- Buscador rápido (navega a TecnicoListView)
-- Categorías de servicios en scroll horizontal
-- Lista de técnicos destacados (máx. 4)
+### Configuración
 
-### TecnicoListView
-- Buscador en tiempo real (debounce 250ms via Combine)
-- Filtros por especialidad (chips seleccionables)
-- Lista animada con badge **VERIFICADO**
-- Estado vacío cuando no hay resultados
+1. Clona el repositorio:
+```bash
+git clone https://github.com/SerJimenez1/TECNILINK-iOS.git
+cd TECNILINK-iOS
+```
 
-### TecnicoDetailView
-- Foto/avatar, nombre, badge verificado
-- DNI Validado indicado en pantalla
-- Stats: trabajos completados, calificación, cantidad de reseñas
-- Galería de reseñas de usuarios
-- Contacto (teléfono y ubicación)
-- Botón "Solicitar Servicio"
+2. Abre `TECNILINK.xcodeproj` en Xcode
 
-### SolicitudView
-- Resumen del técnico seleccionado
-- Selector de fecha y hora (DatePicker)
-- Campo de descripción del problema
-- Slider de precio estimado (S/ 50 – S/ 1,000)
-- Nota sobre sistema Escrow
-- Guarda localmente si no hay red
+3. Agrega los archivos de credenciales (no incluidos en el repo):
 
-### PagoView
-- Estado del Escrow con ícono dinámico
-- Resumen del servicio y desglose de comisión (15%)
-- Selección de método de pago: Yape / Plin / Tarjeta
-- Total a pagar destacado
-- Confirmación con alerta informativa
+**GoogleService-Info.plist** — descárgalo desde Firebase Console y agrégalo al proyecto.
 
-### PerfilView
-- Avatar con inicial del nombre
-- Stats: total de servicios, completados, monto pagado
-- Historial de solicitudes desde Core Data
-- Eliminar solicitudes con confirmación
-- Botón de cierre de sesión
+**CloudinaryConfig.swift** en `Services/`:
+```swift
+struct CloudinaryConfig {
+    static let cloudName = "TU_CLOUD_NAME"
+    static let apiKey = "TU_API_KEY"
+    static let apiSecret = "TU_API_SECRET"
+}
+```
+
+**FactilizaConfig.swift** en `Services/`:
+```swift
+struct FactilizaConfig {
+    static let token = "TU_TOKEN_FACTILIZA"
+}
+```
+
+4. Instala dependencias via SPM:
+   - Firebase iOS SDK (Auth, Firestore, Storage)
+   - GoogleSignIn iOS
+
+5. Ejecuta con **Cmd + R**
 
 ---
 
-## Modelos de datos
+## 👤 Cuenta de administrador
 
-### Tecnico
-| Campo | Tipo | Descripción |
-|---|---|---|
-| id | String | Identificador único |
-| name | String | Nombre completo |
-| specialty | Specialty | Enum de 6 especialidades |
-| rating | Double | Calificación 0–5 |
-| isVerified | Bool | Badge VERIFICADO |
-| description | String | Descripción del técnico |
-| phone | String | Teléfono de contacto |
-| location | String | Zona de cobertura |
-| reviewCount | Int | Número de reseñas |
-| completedJobs | Int | Trabajos terminados |
-| reviews | [Review] | Lista de reseñas |
-
-### Servicio
-| Campo | Tipo | Descripción |
-|---|---|---|
-| id | String | UUID generado localmente |
-| specialty | Specialty | Tipo de servicio |
-| description | String | Descripción del problema |
-| estimatedPrice | Double | Precio acordado |
-| scheduledDate | Date | Fecha y hora del servicio |
-| status | ServiceStatus | pending / accepted / inProgress / completed / cancelled |
-| escrowStatus | EscrowStatus | notInitiated / held / released / refunded |
-| technicianId | String | ID del técnico |
-| userId | String | ID del usuario (Firebase UID) |
-
-### Usuario
-| Campo | Tipo | Descripción |
-|---|---|---|
-| id | String | Firebase UID |
-| name | String | displayName de Firebase |
-| email | String | Email de Firebase |
-| phone | String? | Teléfono opcional |
-| serviceHistory | [String] | IDs de servicios |
-
-### Especialidades disponibles
-| Enum | Valor |
-|---|---|
-| `.electricity` | Electricidad |
-| `.plumbing` | Gasfitería |
-| `.carpentry` | Carpintería |
-| `.locksmith` | Cerrajería |
-| `.appliances` | Electrodomésticos |
-| `.painting` | Pintura/Albañilería |
+Para acceder al panel de admin, el usuario debe tener `role: "admin"` en la colección `/usuarios` de Firestore.
 
 ---
 
-## Arquitectura MVVM
+## 📊 Modelo de negocio
 
-```
-View  ──observa──▶  ViewModel  ──usa──▶  Service / CoreData
- │                      │
- │   (no lógica)        └── @Published vars
- │                          async/await
- └── .task { await vm.fetch() }
-     Button { Task { await vm.action() } }
-```
-
-- **Views** — solo UI, sin lógica de negocio
-- **ViewModels** — `@MainActor`, `ObservableObject`, toda la lógica
-- **Services** — Firebase y API REST (sin estado)
-- **CoreDataManager** — singleton, CRUD de `ServicioEntity`
+- **Comisión:** 15% sobre cada servicio
+- **Ticket promedio:** S/ 200
+- **Mercado objetivo:** Distrito JLB y Rivero, Arequipa
+- **Demanda estimada:** 546 servicios/año
+- **Ingresos proyectados:** S/ 109,200 anuales
 
 ---
 
-## Paleta de colores
+## 👨‍💻 Equipo
 
-| Nombre | Hex | Uso |
-|---|---|---|
-| `tecniPrimary` | `#1A3C6E` | Azul marino — color principal |
-| `tecniAccent` | `#028090` | Teal — acentos e íconos |
-| `tecniMint` | `#02C39A` | Mint — badge verificado, confirmaciones |
-| `tecniGray` | `#64748B` | Gris — texto secundario |
+| Rol | Nombre |
+|-----|--------|
+| Project Manager | Gomez Venero |
+| iOS Developer | Jimenez Araoz, Sergio |
+| Miembro | Apaza Quilla |
+| Miembro | Choquepuma |
+| Miembro | Rosas Flores |
 
----
-
-## Componentes reutilizables (`TecniComponents.swift`)
-
-| Componente | Descripción |
-|---|---|
-| `TecniTextField` | Campo de texto con ícono SF Symbol, estilo glass |
-| `TecniSecureField` | Campo contraseña con toggle mostrar/ocultar |
-| `VerifiedBadge` | Chip verde "VERIFICADO" con sello |
-| `StarRatingView` | Estrellas dinámicas (llena, media, vacía) |
-| `StatusBadge` | Chip de color según `ServiceStatus` |
-| `TecniButton` | Botón primario con estado de carga |
-| `EmptyStateView` | Vista de estado vacío con ícono y texto |
-| `.tecniCard()` | Modificador: fondo blanco + sombra + bordes redondeados |
+**Institución:** TECSUP — Ciclo V  
+**Curso:** Diseño de Proyectos de Innovación + Móviles iOS
 
 ---
 
-## Core Data
+## 📄 Licencia
 
-**Entidad: `ServicioEntity`**
-
-| Atributo | Tipo | Nullable |
-|---|---|---|
-| id | String | No |
-| specialty | String | No |
-| serviceDesc | String | No |
-| estimatedPrice | Double | No |
-| scheduledDate | Date | No |
-| status | String | No |
-| technicianId | String | No |
-| userId | String | No |
-| escrowStatus | String | No |
-| technicianName | String | Sí |
-
-**Operaciones disponibles:**
-- `saveServicio(_:)` — crea o actualiza (upsert por ID)
-- `fetchServicios(for:)` — historial del usuario, ordenado por fecha
-- `updateStatus(id:status:)` — actualiza solo el estado
-- `deleteServicio(id:)` — elimina por ID
-
----
-
-## Manejo de errores
-
-| Escenario | Comportamiento |
-|---|---|
-| Sin conexión al cargar técnicos | Muestra mock data + mensaje informativo |
-| Sin conexión al crear solicitud | Guarda en Core Data para envío posterior |
-| Email/contraseña incorrectos | Mensaje en español mapeado por código de error Firebase |
-| Respuesta HTTP no 2xx | `APIError.invalidResponse(statusCode:)` |
-| JSON inválido | `APIError.decodingError(_:)` |
-| Form inválido (fecha pasada, descripción vacía) | Validación local antes de llamar al ViewModel |
-
----
-
-## Flujo de navegación
-
-```
-[Sin sesión]
-LoginView ──→ RegisterView
-
-[Con sesión]
-MainTabView (TabView)
- ├── Tab 1: HomeView
- │    └──→ TecnicoListView
- │              └──→ TecnicoDetailView
- │                        └──→ SolicitudView
- │                                  └──→ PagoView
- ├── Tab 2: TecnicoListView (acceso directo)
- └── Tab 3: PerfilView (historial + logout)
-```
-
----
-
-## Configuración inicial
-
-### 1. Firebase (Swift Package Manager)
-```
-File → Add Package Dependencies
-URL: https://github.com/firebase/firebase-ios-sdk
-Producto requerido: FirebaseAuth
-```
-
-### 2. Agregar archivos al proyecto Xcode
-```
-Clic derecho en grupo TECNILINK → Add Files to "TECNILINK"…
-Seleccionar todas las carpetas nuevas → Create groups → Add to target: TECNILINK
-```
-
-### 3. GoogleService-Info.plist
-- Crear app en Firebase Console (Bundle ID del proyecto)
-- Descargar y arrastrar a Xcode
-- **NO subir a Git** (ya está en `.gitignore`)
-
-### 4. Habilitar Email/Password en Firebase Console
-```
-Authentication → Sign-in method → Email/Password → Habilitar
-```
-
----
-
-## Criterios de evaluación cubiertos
-
-| Criterio | Implementación |
-|---|---|
-| Git commits semánticos | `feat:`, `fix:`, `refactor:` |
-| MVVM | Views sin lógica, toda en ViewModels, Services separados |
-| UI/UX | NavigationStack, TabView, List, ProgressView, animaciones |
-| Core Data | CRUD completo, persiste entre sesiones |
-| API REST | URLSession + Codable + manejo de errores sin crashes |
-| Firebase Auth | login/registro/logout, `addStateDidChangeListener` controla navegación |
-| Funcionalidad | Mock data offline, validaciones, estados vacíos, casos borde |
+Este proyecto fue desarrollado con fines académicos para TECSUP Arequipa.
