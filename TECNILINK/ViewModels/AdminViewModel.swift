@@ -15,6 +15,10 @@ struct TecnicoPendiente: Identifiable {
     let selfieURL: String?
     let workPhotos: [String]
     let createdAt: Date
+    // DNI verificado con RENIEC
+    let dni: String
+    let dniNombreRENIEC: String
+    let dniVerificado: Bool
 }
 
 @MainActor
@@ -105,6 +109,8 @@ final class AdminViewModel: ObservableObject {
         else { return nil }
 
         let docs = dict["documents"] as? [String: Any] ?? [:]
+        let workPhotosRaw = docs["workPhotos"] as? String ?? ""
+        let workPhotos = workPhotosRaw.isEmpty ? [] : workPhotosRaw.components(separatedBy: ",")
 
         return TecnicoPendiente(
             id: id,
@@ -118,8 +124,11 @@ final class AdminViewModel: ObservableObject {
             dniBackURL: docs["dniBackURL"] as? String,
             certificateURL: docs["certificateURL"] as? String,
             selfieURL: docs["selfieURL"] as? String,
-            workPhotos: docs["workPhotos"] as? [String] ?? [],
-            createdAt: (dict["createdAt"] as? Date) ?? Date()
+            workPhotos: workPhotos,
+            createdAt: (dict["createdAt"] as? Date) ?? Date(),
+            dni: dict["dni"] as? String ?? "",
+            dniNombreRENIEC: dict["dniNombreRENIEC"] as? String ?? "",
+            dniVerificado: dict["dniVerificado"] as? Bool ?? false
         )
     }
 }

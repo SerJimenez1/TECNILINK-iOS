@@ -28,7 +28,7 @@ struct ContentView: View {
     private var tecnicoView: some View {
         switch authVM.tecnicoStatus {
         case "verified":
-            TecnicoDashboardView()
+            TecnicoTabView()
                 .environmentObject(authVM)
 
         case "pending":
@@ -40,14 +40,12 @@ struct ContentView: View {
                 .environmentObject(authVM)
 
         case "pending_documents", "":
-            // Sin documentos todavía → flujo de registro
             NavigationStack {
                 TecnicoRegistroView()
                     .environmentObject(authVM)
             }
 
         default:
-            // Estado desconocido → pantalla de espera
             TecnicoEsperaView()
                 .environmentObject(authVM)
         }

@@ -12,6 +12,7 @@ struct AdminTecnicoDetailView: View {
         ScrollView {
             VStack(spacing: 24) {
                 headerSection
+                dniVerificacionSection
                 infoSection
                 documentsSection
                 actionButtons
@@ -73,6 +74,45 @@ struct AdminTecnicoDetailView: View {
         .padding(.top, 24)
     }
 
+    // MARK: - DNI Verificacion
+
+    private var dniVerificacionSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Verificación RENIEC")
+                .font(.headline)
+                .padding(.horizontal, 20)
+
+            HStack(spacing: 12) {
+                Image(systemName: tecnico.dniVerificado ? "checkmark.seal.fill" : "xmark.seal.fill")
+                    .foregroundColor(tecnico.dniVerificado ? .tecniMint : .red)
+                    .font(.title2)
+
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(tecnico.dniVerificado ? "DNI verificado con RENIEC" : "DNI no verificado")
+                        .font(.subheadline.bold())
+                        .foregroundColor(tecnico.dniVerificado ? .tecniMint : .red)
+
+                    if !tecnico.dni.isEmpty {
+                        Text("DNI: \(tecnico.dni)")
+                            .font(.caption)
+                            .foregroundColor(.tecniGray)
+                    }
+
+                    if !tecnico.dniNombreRENIEC.isEmpty {
+                        Text("RENIEC: \(tecnico.dniNombreRENIEC)")
+                            .font(.caption.bold())
+                            .foregroundColor(.primary)
+                    }
+                }
+            }
+            .padding()
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(tecnico.dniVerificado ? Color.tecniMint.opacity(0.08) : Color.red.opacity(0.08))
+            .cornerRadius(12)
+            .padding(.horizontal, 20)
+        }
+    }
+
     // MARK: - Info
 
     private var infoSection: some View {
@@ -83,8 +123,10 @@ struct AdminTecnicoDetailView: View {
 
             VStack(alignment: .leading, spacing: 10) {
                 InfoRow(icon: "phone.fill", label: "Teléfono", value: tecnico.phone)
-                InfoRow(icon: "text.alignleft", label: "Descripción", value: tecnico.description.isEmpty ? "Sin descripción" : tecnico.description)
-                InfoRow(icon: "calendar", label: "Registrado", value: tecnico.createdAt.formatted(date: .abbreviated, time: .shortened))
+                InfoRow(icon: "text.alignleft", label: "Descripción",
+                        value: tecnico.description.isEmpty ? "Sin descripción" : tecnico.description)
+                InfoRow(icon: "calendar", label: "Registrado",
+                        value: tecnico.createdAt.formatted(date: .abbreviated, time: .shortened))
             }
             .padding()
             .tecniCard()
@@ -241,6 +283,7 @@ private struct DocumentRow: View {
     let icon: String
     let label: String
     let url: String?
+    @State private var showPhoto = false
 
     var body: some View {
         HStack(spacing: 12) {
@@ -250,12 +293,54 @@ private struct DocumentRow: View {
             Text(label)
                 .font(.subheadline)
             Spacer()
-            if url != nil {
-                Image(systemName: "checkmark.circle.fill")
-                    .foregroundColor(.tecniMint)
+            if let url = url {
+                Button {
+                    showPhoto = true
+                } label: {
+                    HStack(spacing: 4) {
+                        Image(systemName: "checkmark.circle.fill")
+                            .foregroundColor(.tecniMint)
+                        Text("Ver")
+                            .font(.caption.bold())
+                            .foregroundColor(.tecniMint)
+                    }
+                }
+                .sheet(isPresented: $showPhoto) {
+                    PhotoViewer(url: url, title: label)
+                }
             } else {
                 Image(systemName: "xmark.circle.fill")
                     .foregroundColor(.red.opacity(0.6))
+            }
+        }
+    }
+}
+
+private struct PhotoViewer: View {
+    let url: String
+    let title: String
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        NavigationStack {
+            ZStack {
+                Color.black.ignoresSafeArea()
+                AsyncImage(url: URL(string: url)) { image in
+                    image
+                        .resizable()
+                        .scaledToFit()
+                } placeholder: {
+                    ProgressView()
+                        .tint(.white)
+                }
+            }
+            .navigationTitle(title)
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button("Cerrar") { dismiss() }
+                        .foregroundColor(.white)
+                }
             }
         }
     }

@@ -11,6 +11,13 @@ struct TecnicoRegistroView: View {
     @State private var navigateToDocumentos = false
     @State private var tecnicoId = ""
 
+    // DNI
+    @State private var dni = ""
+    @State private var dniVerificado = false
+    @State private var dniNombreRENIEC = ""
+    @State private var dniError: String?
+    @State private var isVerifyingDNI = false
+
     let specialties = ["Electricidad", "Gasfitería", "Carpintería",
                        "Cerrajería", "Electrodomésticos", "Pintura/Albañilería"]
 
@@ -23,8 +30,11 @@ struct TecnicoRegistroView: View {
             ScrollView {
                 VStack(spacing: 24) {
                     headerSection
-                    formSection
-                    continueButton
+                    dniSection
+                    if dniVerificado {
+                        formSection
+                        continueButton
+                    }
                 }
                 .padding(.horizontal, 28)
                 .padding(.top, 40)
@@ -55,6 +65,76 @@ struct TecnicoRegistroView: View {
         }
     }
 
+    // MARK: - DNI Section
+
+    private var dniSection: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text("Verificación de identidad")
+                .font(.caption.bold())
+                .foregroundColor(.white.opacity(0.8))
+
+            HStack(spacing: 10) {
+                HStack {
+                    Image(systemName: "creditcard.fill")
+                        .foregroundColor(.tecniGray)
+                    TextField("Número de DNI", text: $dni)
+                        .keyboardType(.numberPad)
+                        .onChange(of: dni) { _, newValue in
+                            let filtered = newValue.filter { $0.isNumber }
+                            if filtered != newValue { dni = filtered }
+                            if filtered.count > 8 { dni = String(filtered.prefix(8)) }
+                            if dniVerificado {
+                                dniVerificado = false
+                                dniNombreRENIEC = ""
+                                dniError = nil
+                            }
+                        }
+                }
+                .padding()
+                .background(Color.white)
+                .cornerRadius(12)
+
+                Button {
+                    Task { await verificarDNI() }
+                } label: {
+                    ZStack {
+                        if isVerifyingDNI {
+                            ProgressView().tint(.white)
+                        } else {
+                            Text("Verificar")
+                                .font(.subheadline.bold())
+                                .foregroundColor(.white)
+                        }
+                    }
+                    .frame(width: 90, height: 52)
+                    .background(dni.count == 8 ? Color.tecniMint : Color.white.opacity(0.3))
+                    .cornerRadius(12)
+                }
+                .disabled(dni.count != 8 || isVerifyingDNI)
+            }
+
+            if let error = dniError {
+                HStack(spacing: 6) {
+                    Image(systemName: "xmark.circle.fill").foregroundColor(.red)
+                    Text(error).font(.caption).foregroundColor(.red)
+                }
+            }
+
+            if dniVerificado {
+                HStack(spacing: 6) {
+                    Image(systemName: "checkmark.seal.fill").foregroundColor(.tecniMint)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("DNI verificado con RENIEC").font(.caption.bold()).foregroundColor(.tecniMint)
+                        Text(dniNombreRENIEC).font(.caption).foregroundColor(.white.opacity(0.8))
+                    }
+                }
+                .padding()
+                .background(Color.tecniMint.opacity(0.15))
+                .cornerRadius(10)
+            }
+        }
+    }
+
     // MARK: - Form
 
     private var formSection: some View {
@@ -71,13 +151,11 @@ struct TecnicoRegistroView: View {
                     }
                 } label: {
                     HStack {
-                        Image(systemName: "wrench.fill")
-                            .foregroundColor(.tecniGray)
+                        Image(systemName: "wrench.fill").foregroundColor(.tecniGray)
                         Text(specialty.isEmpty ? "Selecciona tu especialidad" : specialty)
                             .foregroundColor(specialty.isEmpty ? .tecniGray : .primary)
                         Spacer()
-                        Image(systemName: "chevron.down")
-                            .foregroundColor(.tecniGray)
+                        Image(systemName: "chevron.down").foregroundColor(.tecniGray)
                     }
                     .padding()
                     .background(Color.white)
@@ -85,18 +163,11 @@ struct TecnicoRegistroView: View {
                 }
             }
 
-            TecniTextField(
-                placeholder: "Teléfono de contacto",
-                text: $phone,
-                icon: "phone.fill",
-                keyboardType: .phonePad
-            )
+            TecniTextField(placeholder: "Teléfono de contacto", text: $phone,
+                           icon: "phone.fill", keyboardType: .phonePad)
 
-            TecniTextField(
-                placeholder: "Zona de trabajo (ej: JLByR, Miraflores)",
-                text: $location,
-                icon: "mappin.fill"
-            )
+            TecniTextField(placeholder: "Zona de trabajo (ej: JLByR, Miraflores)",
+                           text: $location, icon: "mappin.fill")
 
             VStack(alignment: .leading, spacing: 6) {
                 Text("Descripción profesional")
@@ -151,8 +222,35 @@ struct TecnicoRegistroView: View {
     }
 
     private var isFormValid: Bool {
-        !specialty.isEmpty && !phone.isEmpty &&
-        !location.isEmpty && !description.isEmpty
+        dniVerificado && !specialty.isEmpty &&
+        !phone.isEmpty && !location.isEmpty && !description.isEmpty
+    }
+
+    // MARK: - Verificar DNI
+
+    private func verificarDNI() async {
+        isVerifyingDNI = true
+        dniError = nil
+        dniVerificado = false
+
+        do {
+            let resultado = try await FactilizaService.shared.consultarDNI(dni)
+
+            guard let nombreCompleto = resultado.nombreCompleto,
+                  !nombreCompleto.isEmpty else {
+                dniError = "No se encontró información para ese DNI."
+                isVerifyingDNI = false
+                return
+            }
+
+            dniNombreRENIEC = nombreCompleto
+            dniVerificado = true
+
+        } catch {
+            dniError = error.localizedDescription
+        }
+
+        isVerifyingDNI = false
     }
 
     // MARK: - Save
@@ -177,10 +275,10 @@ struct TecnicoRegistroView: View {
                 phone: phone,
                 location: location,
                 description: description,
-                userId: userId
+                userId: userId,
+                dni: dni,
+                dniNombreRENIEC: dniNombreRENIEC
             )
-            // Navegar directo sin recargar status
-            // El status se actualizará cuando cierre y vuelva a abrir sesión
             navigateToDocumentos = true
         } catch {
             authVM.errorMessage = "Error al guardar tu información. Intenta de nuevo."
@@ -189,4 +287,3 @@ struct TecnicoRegistroView: View {
         authVM.isLoading = false
     }
 }
-        

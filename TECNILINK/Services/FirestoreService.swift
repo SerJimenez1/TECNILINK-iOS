@@ -111,7 +111,9 @@ final class FirestoreService {
         phone: String,
         location: String,
         description: String,
-        userId: String
+        userId: String,
+        dni: String = "",
+        dniNombreRENIEC: String = ""
     ) async throws {
         let data: [String: Any] = [
             "id": id,
@@ -122,6 +124,9 @@ final class FirestoreService {
             "phone": phone,
             "location": location,
             "description": description,
+            "dni": dni,
+            "dniNombreRENIEC": dniNombreRENIEC,
+            "dniVerificado": !dniNombreRENIEC.isEmpty,
             "verificationStatus": "pending_documents",
             "isVerified": false,
             "rating": 0.0,

@@ -21,3 +21,6 @@ GoogleService-Info.plist
 
 # Cloudinary credentials
 TECNILINK/Services/CloudinaryConfig.swift
+
+# Factiliza credentials
+TECNILINK/Services/FactilizaConfig.swift
