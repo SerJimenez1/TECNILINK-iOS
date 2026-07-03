@@ -37,6 +37,27 @@
 
 TECNILINK es una app iOS nativa que conecta usuarios con técnicos verificados en servicios del hogar. El diferencial principal es el **sistema de verificación de identidad en tiempo real con RENIEC**, que garantiza que cada técnico es quien dice ser antes de aparecer en la plataforma.
 
+## 🔄 Flujos principales
+
+### Flujo del Cliente
+Registro → Buscar técnico verificado → Ver perfil + DNI Validado →
+Solicitar servicio (precio + descripción + fecha) →
+Esperar respuesta del técnico → Ver aceptación en Mis Servicios →
+Confirmar trabajo completado → Calificar técnico (⭐⭐⭐⭐⭐)
+
+### Flujo del Técnico
+Registro → Verificación DNI con RENIEC →
+Completar perfil (especialidad, zona, descripción) →
+Subir documentos (DNI, certificado, selfie, fotos de trabajo) →
+Esperar aprobación del admin →
+Dashboard activo → Ver solicitud en detalle →
+Aceptar o Rechazar → Realizar trabajo → Marcar como completado
+
+### Flujo del Administrador
+Login como admin → Panel de verificación →
+Ver técnicos pendientes → Revisar DNI verificado con RENIEC →
+Ver documentos físicos subidos → Aprobar o rechazar con motivo
+
 **Especialidades disponibles:**
 - ⚡ Electricidad
 - 💧 Gasfitería
