@@ -38,13 +38,10 @@ struct RegisterView: View {
             }
         }
         .navigationBarHidden(true)
-        .navigationDestination(isPresented: Binding(
-            get: { authVM.navigateToTecnicoRegistro },
-            set: { authVM.navigateToTecnicoRegistro = $0 }
-        )) {
-            TecnicoRegistroView()
-                .environmentObject(authVM)
-        }
+        // El navigationDestination que estaba aquí se eliminó:
+        // no funcionaba porque RegisterView no vive dentro de su propio
+        // NavigationStack. La navegación a TecnicoRegistroView ahora la
+        // maneja ContentView, reaccionando a authVM.tecnicoStatus.
     }
 
     // MARK: - Subviews

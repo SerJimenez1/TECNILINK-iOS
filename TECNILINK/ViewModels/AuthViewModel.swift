@@ -16,6 +16,12 @@ final class AuthViewModel: ObservableObject {
     private let firebaseService: FirebaseService
     private let firestoreService = FirestoreService.shared
 
+    // Mientras es true, el listener de Auth (observeAuthState) no toca
+    // currentUser ni isAuthenticated. Evita que el listener lea Firestore
+    // ANTES de que signUp() termine de guardar el documento (race condition
+    // que causaba el flash de MainTabView antes de corregirse a TecnicoRegistroView).
+    private var isRegistering = false
+
     init(firebaseService: FirebaseService = FirebaseService()) {
         self.firebaseService = firebaseService
         observeAuthState()
@@ -43,14 +49,27 @@ final class AuthViewModel: ObservableObject {
         guard validate(email: email, password: password) else { return }
         isLoading = true
         errorMessage = nil
+        isRegistering = true   // el listener no debe reaccionar mientras hacemos esto nosotros mismos
         do {
             try await firebaseService.signUp(name: name, email: email, password: password, role: role)
-            if role == "tecnico" {
-                navigateToTecnicoRegistro = true
+
+            // signUp ya terminó -> Firestore ya tiene el doc con el role correcto.
+            // Leemos nosotros mismos (el listener está silenciado por isRegistering).
+            if let firebaseUser = Auth.auth().currentUser {
+                await loadUserFromFirestore(firebaseUser: firebaseUser)
+                // loadUserFromFirestore ya llama a loadTecnicoStatus() internamente
+                // cuando role == "tecnico", así que currentUser y tecnicoStatus
+                // quedan listos ANTES de marcar isAuthenticated = true.
             }
+
+            // Recién ahora activamos isAuthenticated, con currentUser.role y
+            // tecnicoStatus ya correctos. Así ContentView nunca llega a pintar
+            // MainTabView de por medio.
+            isAuthenticated = true
         } catch {
             errorMessage = mapError(error)
         }
+        isRegistering = false
         isLoading = false
     }
 
@@ -77,7 +96,10 @@ final class AuthViewModel: ObservableObject {
     // MARK: - Tecnico Status
 
     func loadTecnicoStatus() async {
-        guard let userId = currentUser?.id else { return }
+        // currentUser puede no estar listo aún (se llena de forma async vía el
+        // listener de Auth), así que caemos a Auth.auth().currentUser?.uid,
+        // que sí está disponible inmediatamente después de signUp/signIn.
+        guard let userId = currentUser?.id ?? Auth.auth().currentUser?.uid else { return }
         do {
             let data = try await firestoreService.fetchTecnicoByUserId(userId)
             tecnicoStatus = data?["verificationStatus"] as? String ?? "pending_documents"
@@ -94,6 +116,12 @@ final class AuthViewModel: ObservableObject {
         Auth.auth().addStateDidChangeListener { [weak self] _, firebaseUser in
             Task { @MainActor [weak self] in
                 guard let self else { return }
+                // register() ya se está encargando de leer Firestore y setear
+                // currentUser/isAuthenticated con los datos correctos. Si el
+                // listener también lo hiciera aquí, podría leer Firestore antes
+                // de que el documento exista (role="user" por fallback) y
+                // causar el flash de MainTabView antes de corregirse.
+                if self.isRegistering { return }
                 if let user = firebaseUser {
                     await self.loadUserFromFirestore(firebaseUser: user)
                     self.isAuthenticated = true
@@ -107,7 +135,10 @@ final class AuthViewModel: ObservableObject {
         }
     }
 
-    private func loadUserFromFirestore(firebaseUser: FirebaseAuth.User) async {
+    // Antes era `private`. Se quitó el modificador para poder llamarla
+    // explícitamente desde register() y forzar una relectura de Firestore
+    // una vez que signUp() ya terminó de escribir el documento.
+    func loadUserFromFirestore(firebaseUser: FirebaseAuth.User) async {
         do {
             let data = try await firestoreService.fetchUsuario(id: firebaseUser.uid)
             if let data = data {
@@ -172,7 +203,7 @@ final class AuthViewModel: ObservableObject {
         }
         if !password.contains(where: { $0.isUppercase }) {
             errorMessage = "La contraseña debe tener al menos una mayúscula."
-            return false
+            return false    
         }
         if !password.contains(where: { $0.isNumber }) {
             errorMessage = "La contraseña debe tener al menos un número."
@@ -188,7 +219,7 @@ final class AuthViewModel: ObservableObject {
         case 17007: return "Este correo ya está registrado."
         case 17008: return "Formato de correo inválido."
         case 17026: return "La contraseña debe tener al menos 8 caracteres."
-        case 17020: return "Sin conexión a internet. Verifica tu red."
+        case 17020: return "Sin conexión a int  ernet. Verifica tu red."
         default:    return "Error inesperado. Intenta de nuevo."
         }
     }
