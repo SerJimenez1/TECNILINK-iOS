@@ -7,7 +7,7 @@
 ![iOS](https://img.shields.io/badge/iOS-17%2B-black?logo=apple)
 ![Firebase](https://img.shields.io/badge/Firebase-Firestore-yellow?logo=firebase)
 ![Cloudinary](https://img.shields.io/badge/Storage-Cloudinary-3448C5)
-![RENIEC](https://img.shields.io/badge/Verificación-RENIEC-02C39A)
+
 
 ---
 
