@@ -3,16 +3,39 @@
 > Plataforma digital que conecta usuarios con técnicos verificados en servicios del hogar en Arequipa, Perú.
 
 ![Swift](https://img.shields.io/badge/Swift-5.9-orange?logo=swift)
-![iOS](https://img.shields.io/badge/iOS-17%2B-blue?logo=apple)
+![SwiftUI](https://img.shields.io/badge/SwiftUI-5.0-blue?logo=swift)
+![iOS](https://img.shields.io/badge/iOS-17%2B-black?logo=apple)
 ![Firebase](https://img.shields.io/badge/Firebase-Firestore-yellow?logo=firebase)
-![Cloudinary](https://img.shields.io/badge/Storage-Cloudinary-purple)
-![RENIEC](https://img.shields.io/badge/Verificación-RENIEC-green)
+![Cloudinary](https://img.shields.io/badge/Storage-Cloudinary-3448C5)
+![RENIEC](https://img.shields.io/badge/Verificación-RENIEC-02C39A)
 
 ---
 
-## 📱 Descripción
+## 📱 Capturas de pantalla
 
-TECNILINK es una app iOS nativa que resuelve el problema de encontrar técnicos confiables para servicios del hogar. El diferencial principal es el **sistema de verificación de identidad en tiempo real con RENIEC**, que garantiza que cada técnico es quien dice ser antes de aparecer en la plataforma.
+<p align="center">
+  <img src="screenshot_login.png" width="18%" alt="Login"/>
+  <img src="screenshot_home.png" width="18%" alt="Home"/>
+  <img src="screenshot_detalle.png" width="18%" alt="Detalle técnico"/>
+  <img src="screenshot_solicitud.png" width="18%" alt="Solicitar servicio"/>
+  <img src="screenshot_misservicios.png" width="18%" alt="Mis Servicios"/>
+</p>
+
+<p align="center">
+  <img src="screenshot_registro_tecnico.png" width="18%" alt="Registro técnico con verificación RENIEC"/>
+</p>
+
+---
+
+## 🎬 Video Demo
+
+> 📺 **[Ver demo en YouTube](https://youtube.com/LINK_AQUI)**
+
+---
+
+## 📖 Descripción
+
+TECNILINK es una app iOS nativa que conecta usuarios con técnicos verificados en servicios del hogar. El diferencial principal es el **sistema de verificación de identidad en tiempo real con RENIEC**, que garantiza que cada técnico es quien dice ser antes de aparecer en la plataforma.
 
 **Especialidades disponibles:**
 - ⚡ Electricidad
@@ -30,7 +53,8 @@ TECNILINK es una app iOS nativa que resuelve el problema de encontrar técnicos 
 
 | Capa | Tecnología |
 |------|-----------|
-| UI | SwiftUI |
+| Lenguaje | Swift 5.9 |
+| UI Framework | SwiftUI |
 | Arquitectura | MVVM (ObservableObject / StateObject) |
 | Autenticación | Firebase Auth (Email + Google Sign-In) |
 | Base de datos | Firebase Firestore |
@@ -45,92 +69,48 @@ TECNILINK es una app iOS nativa que resuelve el problema de encontrar técnicos 
 
 ### 👤 Cliente
 - Registro con email/contraseña o Google Sign-In
-- Búsqueda y filtrado de técnicos verificados
-- Solicitud de servicio con precio estimado
-- Historial de servicios con estados
+- Búsqueda y filtrado de técnicos verificados por especialidad
+- Solicitud de servicio con precio estimado (slider + campo de texto)
+- Historial con estados: Pendiente / Aceptado / Completado / Rechazado
 - Confirmación de trabajo completado
-- Calificación del técnico (1-5 estrellas)
+- Calificación del técnico (1-5 estrellas + comentario)
 
 ### 🔧 Técnico
 - Registro con verificación de DNI en tiempo real (RENIEC)
-- Subida de documentos (DNI, certificado, selfie, fotos de trabajo)
+- Subida de documentos: DNI, certificado técnico, selfie, fotos de trabajos
 - Dashboard con filtros: Nuevas / En curso / Rechazadas / Completadas
-- Vista detallada de cada solicitud antes de aceptar o rechazar
+- Vista detallada de solicitud antes de aceptar o rechazar
 - Marcar trabajo como completado
 
 ### 🛡️ Administrador
 - Panel de verificación de técnicos pendientes
-- Visualización de documentos subidos
-- Verificación del DNI consultado en RENIEC
+- Visualización de documentos con visor de imágenes
+- Verificación del DNI contra RENIEC
 - Aprobación o rechazo con motivo
 
 ---
 
-## 🔄 Flujos principales
+## ✅ Sistema de Verificación en 3 Capas
 
-### Flujo del Cliente
-```
-Registro → Buscar técnico → Solicitar servicio →
-Esperar respuesta del técnico → Ver aceptación →
-Confirmar trabajo completado → Calificar técnico
-```
+**Capa 1 — Verificación DNI con RENIEC**
+El técnico ingresa su DNI y se valida en tiempo real contra RENIEC vía API Factiliza.
 
-### Flujo del Técnico
-```
-Registro → Verificación DNI (RENIEC) → Llenar perfil →
-Subir documentos → Esperar aprobación del admin →
-Dashboard → Ver solicitud en detalle →
-Aceptar/Rechazar → Marcar como completado
-```
+**Capa 2 — Documentos físicos**
+DNI frontal/posterior, certificado técnico, selfie con DNI y mínimo 3 fotos de trabajos anteriores almacenados en Cloudinary.
 
-### Flujo del Administrador
-```
-Login → Panel de verificación →
-Ver técnicos pendientes → Revisar documentos y DNI →
-Aprobar o rechazar con motivo
-```
-
----
-
-## ✅ Sistema de Verificación
-
-El diferencial de TECNILINK es su proceso de verificación en 3 capas:
-
-1. **Verificación DNI con RENIEC** — Al registrarse, el técnico ingresa su DNI que se valida en tiempo real contra la base de datos de RENIEC vía API Factiliza. El nombre devuelto se guarda y es visible para el administrador.
-
-2. **Documentos físicos** — El técnico sube fotos de:
-   - DNI frontal y posterior
-   - Certificado técnico o constancia de estudios
-   - Selfie sosteniendo el DNI
-   - Mínimo 3 fotos de trabajos anteriores
-
-3. **Revisión manual del admin** — El administrador revisa los documentos y el resultado de RENIEC antes de aprobar al técnico. Solo técnicos aprobados aparecen en la app.
+**Capa 3 — Revisión manual del admin**
+El administrador revisa y aprueba al técnico. Solo técnicos aprobados aparecen en la app con el badge VERIFICADO.
 
 ---
 
 ## 🗄️ Estructura de Firestore
 
 ```
-/usuarios/{userId}
-  - id, name, email, role, registeredAt
-
-/tecnicos/{tecnicoId}
-  - id, userId, name, email, specialty
-  - phone, location, description
-  - dni, dniNombreRENIEC, dniVerificado
-  - verificationStatus: "pending_documents" | "pending" | "verified" | "rejected"
-  - isVerified, rating, reviewCount, completedJobs
-  - documents: { dniFrontURL, dniBackURL, certificateURL, selfieURL, workPhotos }
-  - createdAt, updatedAt, verifiedAt?
-
-/servicios/{servicioId}
-  - id, userId, technicianId, technicianName
-  - specialty, description, estimatedPrice
-  - scheduledDate, status, escrowStatus, createdAt
-
-/resenas/{resenaId}
-  - id, tecnicoId, userId, servicioId
-  - rating, comment, createdAt
+/usuarios/{userId}        → id, name, email, role, registeredAt
+/tecnicos/{tecnicoId}     → id, name, specialty, dni, dniNombreRENIEC,
+                            verificationStatus, documents, rating
+/servicios/{servicioId}   → id, userId, technicianId, status, escrowStatus
+/resenas/{resenaId}       → id, tecnicoId, userId, rating, comment
 ```
 
 ---
@@ -139,143 +119,74 @@ El diferencial de TECNILINK es su proceso de verificación en 3 capas:
 
 ```
 TECNILINK/
-├── App/
-│   ├── TECNILINKApp.swift
-│   └── ContentView.swift
-├── Extensions/
-│   └── Color+Hex.swift
-├── Models/
-│   ├── Tecnico.swift
-│   ├── Servicio.swift
-│   └── Usuario.swift
-├── Persistence/
-│   └── CoreDataManager.swift
-├── Services/
-│   ├── FirebaseService.swift
-│   ├── FirestoreService.swift
-│   ├── StorageService.swift
-│   ├── FactilizaService.swift
-│   ├── CloudinaryConfig.swift     ← en .gitignore
-│   └── FactilizaConfig.swift      ← en .gitignore
-├── ViewModels/
-│   ├── AuthViewModel.swift
-│   ├── TecnicoViewModel.swift
-│   ├── SolicitudViewModel.swift
-│   ├── AdminViewModel.swift
-│   └── TecnicoDashboardViewModel.swift
+├── App/                  → TECNILINKApp.swift, ContentView.swift
+├── Models/               → Tecnico, Servicio, Usuario
+├── Services/             → Firebase, Firestore, Cloudinary, Factiliza
+├── ViewModels/           → Auth, Tecnico, Solicitud, Admin, Dashboard
 └── Views/
-    ├── Admin/
-    │   ├── AdminDashboardView.swift
-    │   └── AdminTecnicoDetailView.swift
-    ├── Auth/
-    │   ├── LoginView.swift
-    │   └── RegisterView.swift
-    ├── Components/
-    ├── Home/
-    │   └── HomeView.swift
-    ├── MisServicios/
-    │   ├── MisServiciosView.swift
-    │   └── CalificacionView.swift
-    ├── Pago/
-    │   └── PagoView.swift
-    ├── Perfil/
-    │   └── PerfilView.swift
-    ├── Solicitud/
-    │   └── SolicitudView.swift
-    ├── Tecnico/
-    │   ├── TecnicoListView.swift
-    │   └── TecnicoDetailView.swift
-    └── TecnicoApp/
-        ├── TecnicoTabView.swift
-        ├── TecnicoRegistroView.swift
-        ├── TecnicoDocumentosView.swift
-        ├── TecnicoEsperaView.swift
-        ├── TecnicoDashboardView.swift
-        ├── TecnicoPerfilView.swift
-        ├── TecnicoRechazadoView.swift
-        └── SolicitudDetalleView.swift
+    ├── Admin/            → AdminDashboardView, AdminTecnicoDetailView
+    ├── Auth/             → LoginView, RegisterView
+    ├── Home/             → HomeView
+    ├── MisServicios/     → MisServiciosView, CalificacionView
+    ├── Solicitud/        → SolicitudView
+    ├── Tecnico/          → TecnicoListView, TecnicoDetailView
+    └── TecnicoApp/       → Dashboard, Registro, Documentos, Espera
 ```
 
 ---
 
 ## 🚀 Instalación
 
-### Requisitos
-- Xcode 15+
-- iOS 17+
-- Cuenta Firebase
-- Cuenta Cloudinary
-- Token API Factiliza
-
-### Configuración
-
-1. Clona el repositorio:
 ```bash
 git clone https://github.com/SerJimenez1/TECNILINK-iOS.git
 cd TECNILINK-iOS
+open TECNILINK.xcodeproj
 ```
 
-2. Abre `TECNILINK.xcodeproj` en Xcode
+Agrega los archivos de credenciales (no incluidos en el repo):
+- `GoogleService-Info.plist` — Firebase Console
+- `CloudinaryConfig.swift` — credenciales Cloudinary
+- `FactilizaConfig.swift` — token API Factiliza
 
-3. Agrega los archivos de credenciales (no incluidos en el repo):
-
-**GoogleService-Info.plist** — descárgalo desde Firebase Console y agrégalo al proyecto.
-
-**CloudinaryConfig.swift** en `Services/`:
-```swift
-struct CloudinaryConfig {
-    static let cloudName = "TU_CLOUD_NAME"
-    static let apiKey = "TU_API_KEY"
-    static let apiSecret = "TU_API_SECRET"
-}
-```
-
-**FactilizaConfig.swift** en `Services/`:
-```swift
-struct FactilizaConfig {
-    static let token = "TU_TOKEN_FACTILIZA"
-}
-```
-
-4. Instala dependencias via SPM:
-   - Firebase iOS SDK (Auth, Firestore, Storage)
-   - GoogleSignIn iOS
-
-5. Ejecuta con **Cmd + R**
-
----
-
-## 👤 Cuenta de administrador
-
-Para acceder al panel de admin, el usuario debe tener `role: "admin"` en la colección `/usuarios` de Firestore.
+Ejecuta con **Cmd + R**
 
 ---
 
 ## 📊 Modelo de negocio
 
-- **Comisión:** 15% sobre cada servicio
-- **Ticket promedio:** S/ 200
-- **Mercado objetivo:** Distrito JLB y Rivero, Arequipa
-- **Demanda estimada:** 546 servicios/año
-- **Ingresos proyectados:** S/ 109,200 anuales
+| Métrica | Valor |
+|---------|-------|
+| Comisión por servicio | 15% |
+| Ticket promedio | S/ 200 |
+| Demanda estimada | 546 servicios/año |
+| Ingresos proyectados | S/ 109,200/año |
+| Mercado objetivo | Distrito JLB y Rivero, Arequipa |
 
 ---
 
 ## 👨‍💻 Equipo
 
-| Rol | Nombre |
-|-----|--------|
-| Project Manager | Gomez Venero Jordy|
-| iOS Developer | Jimenez Araoz, Sergio |
-| QA| Apaza Quilla,  Yonay |
-| QA | Choquepuma,  Josue  |
-| QA | Rosas Flores,  Steven |
+| Rol | Nombre completo |
+|-----|----------------|
+| 🎯 Project Manager | Gomez Venero, Jordy |
+| 💻 iOS Developer | Jimenez Araoz, Sergio |
+| 🧪 QA Engineer | Apaza Quilla, Yonay |
+| 🧪 QA Engineer | Choquepuma Espinoza, Josue |
+| 🧪 QA Engineer | Rosas Flores, Steven |
 
-**Institución:** TECSUP — Ciclo V  
-**Curso:** Diseño de Proyectos de Innovación + Móviles iOS
+---
+
+## 🏫 Contexto académico
+
+| Campo | Detalle |
+|-------|---------|
+| Institución | TECSUP Arequipa |
+| Ciclo | V |
+| Curso | Diseño de Proyectos de Innovación + Móviles iOS |
+| Entrega | Semana 16 — Viernes 3 de julio, 1:50 PM |
 
 ---
 
 ## 📄 Licencia
 
-Este proyecto fue desarrollado con fines académicos para TECSUP Arequipa.
+Proyecto académico desarrollado para TECSUP Arequipa, Ciclo V — 2026.
