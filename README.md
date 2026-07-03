@@ -268,8 +268,8 @@ Para acceder al panel de admin, el usuario debe tener `role: "admin"` en la cole
 | Project Manager | Gomez Venero Jordy|
 | iOS Developer | Jimenez Araoz, Sergio |
 | QA| Apaza Quilla Yonay |
-| QA | Choquepuma  |
-| QA | Rosas Flores |
+| QA | Choquepuma Josue  |
+| QA | Rosas Flores Steven |
 
 **Institución:** TECSUP — Ciclo V  
 **Curso:** Diseño de Proyectos de Innovación + Móviles iOS
