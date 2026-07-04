@@ -29,7 +29,7 @@
 
 ## 🎬 Video Demo
 
-> 📺 **[Ver demo en YouTube](https://www.youtube.com/watch?v=adcvLQrG754)**
+> 📺 **[Ver demo en YouTube](https://youtu.be/MsnqDNU7M84)**
 
 ---
 
